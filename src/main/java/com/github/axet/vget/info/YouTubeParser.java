@@ -20,7 +20,6 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import com.github.axet.vget.info.VideoInfo.States;
 import com.github.axet.vget.info.VideoInfo.VideoQuality;
 import com.github.axet.wget.WGet;
-import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.ex.DownloadError;
 
 public class YouTubeParser extends VGetParser {
@@ -89,6 +88,14 @@ public class YouTubeParser extends VGetParser {
         }
     }
 
+    /**
+     * do not allow to download age restricted videos
+     * 
+     * @param info
+     * @param stop
+     * @param notify
+     * @throws Exception
+     */
     void streamCpature(final VideoInfo info, final AtomicBoolean stop, final Runnable notify) throws Exception {
         String html;
         html = WGet.getHtml(info.getWeb(), new WGet.HtmlLoader() {
@@ -127,13 +134,11 @@ public class YouTubeParser extends VGetParser {
 
         URL u = new URL(url);
 
-        System.out.println(u);
-
         if (u != null)
             sNextVideoURL.put(vd, u);
     }
 
-    Map<Integer, VideoQuality> itagMap = new HashMap<Integer, VideoInfo.VideoQuality>() {
+    static Map<Integer, VideoQuality> itagMap = new HashMap<Integer, VideoInfo.VideoQuality>() {
         private static final long serialVersionUID = -6925194111122038477L;
         {
             // mp4
@@ -180,6 +185,14 @@ public class YouTubeParser extends VGetParser {
         return null;
     }
 
+    /**
+     * allows to download age restricted videos
+     * 
+     * @param info
+     * @param stop
+     * @param notify
+     * @throws Exception
+     */
     void extractEmbedded(final VideoInfo info, final AtomicBoolean stop, final Runnable notify) throws Exception {
         String id = extractId(source);
         if (id == null) {
@@ -230,9 +243,10 @@ public class YouTubeParser extends VGetParser {
 
         // String fmt_list = URLDecoder.decode(map.get("fmt_list"), "UTF-8");
         // String[] fmts = fmt_list.split(",");
+
         String url_encoded_fmt_stream_map = URLDecoder.decode(map.get("url_encoded_fmt_stream_map"), "UTF-8");
 
-        extractUrlEncodedVideos(url_encoded_fmt_stream_map, stop, notify);
+        extractUrlEncodedVideos(url_encoded_fmt_stream_map);
 
         // 'iurlmaxresæ or 'iurlsd' or 'thumbnail_url'
         String icon = map.get("thumbnail_url");
@@ -299,7 +313,7 @@ public class YouTubeParser extends VGetParser {
                 if (encodMatch.find()) {
                     String sline = encodMatch.group(1);
 
-                    extractUrlEncodedVideos(sline, stop, notify);
+                    extractUrlEncodedVideos(sline);
                 }
 
                 // stream video
@@ -345,7 +359,7 @@ public class YouTubeParser extends VGetParser {
         }
     }
 
-    void extractUrlEncodedVideos(String sline, AtomicBoolean stop, Runnable notify) throws Exception {
+    void extractUrlEncodedVideos(String sline) throws Exception {
         String[] urlStrings = sline.split("url=");
 
         for (String urlString : urlStrings) {
@@ -385,9 +399,6 @@ public class YouTubeParser extends VGetParser {
 
                         if (sig != null)
                             url += "&signature=" + sig;
-
-                        if (itag != null)
-                            url += "&itag=" + itag;
 
                         if (itag != null) {
                             addVideo(itag, url);
