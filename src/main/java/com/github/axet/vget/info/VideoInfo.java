@@ -99,6 +99,8 @@ public class VideoInfo {
         try {
             ei.extract(this, stop, notify);
 
+            info.setReferer(web);
+            
             info.extract(stop, notify);
         } catch (DownloadInterruptedError e) {
             setState(States.STOP, e);

@@ -104,8 +104,8 @@ public class VGet {
         return f;
     }
 
-    static String maxFileLength(String str) {
-        int max = 50;
+    static String maxFileNameLength(String str) {
+        int max = 255;
         if (str.length() > max)
             str = str.substring(0, max);
         return str;
@@ -197,7 +197,7 @@ public class VGet {
 
             String sfilename = replaceBadChars(info.getTitle());
 
-            sfilename = maxFileLength(sfilename);
+            sfilename = maxFileNameLength(sfilename);
 
             String ct = dinfo.getContentType();
             if (ct == null)
@@ -257,6 +257,7 @@ public class VGet {
         while (!done(stop)) {
             try {
                 if (info.empty()) {
+                    info.setState(States.EXTRACTING);
                     info.extract(stop, notify);
                     info.setState(States.EXTRACTING_DONE);
                     notify.run();
