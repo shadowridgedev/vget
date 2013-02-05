@@ -1,5 +1,9 @@
 # vget
 
+Video Download Library.
+
+Support for Youtube, Vimeo. Multithread downloads.
+
 Inspired by http://sourceforge.net/projects/ytd2/.
 
 Code taken from ytd2 and completely rewritten to support more web sites.
