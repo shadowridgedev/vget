@@ -2,7 +2,9 @@
 
 Video Download Library.
 
-Support for Youtube, Vimeo. Multithread downloads.
+Support for Youtube, Vimeo. Multithread downloads. Based on multithread download library https://github.com/axet/wget.
+
+Pure java!
 
 Inspired by http://sourceforge.net/projects/ytd2/.
 
