@@ -150,7 +150,7 @@ public class VGet {
                 info.extract(stop, notify);
                 DownloadInfo infoNew = info.getInfo();
 
-                if (infoOld.resume(infoNew)) {
+                if (infoOld != null && infoOld.resume(infoNew)) {
                     infoNew.copy(infoOld);
                 } else {
                     if (targetFile != null) {
