@@ -274,7 +274,7 @@ public class YouTubeParser extends VGetParser {
         try {
             qs = qs.trim();
             List<NameValuePair> list;
-            list = URLEncodedUtils.parse(new URI(null, null, null, 0, null, qs, null), "UTF-8");
+            list = URLEncodedUtils.parse(new URI(null, null, null, -1, null, qs, null), "UTF-8");
             HashMap<String, String> map = new HashMap<String, String>();
             for (NameValuePair p : list) {
                 map.put(p.getName(), p.getValue());
