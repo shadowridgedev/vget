@@ -1,4 +1,4 @@
-package com.github.axet.vget.info;
+package com.github.axet.vget.vhs;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -17,6 +17,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 
+import com.github.axet.vget.info.VGetParser;
+import com.github.axet.vget.info.VideoInfo;
 import com.github.axet.vget.info.VideoInfo.States;
 import com.github.axet.vget.info.VideoInfo.VideoQuality;
 import com.github.axet.wget.WGet;
@@ -413,11 +415,11 @@ public class YouTubeParser extends VGetParser {
     }
 
     @Override
-    public void extract(VideoInfo info, VideoQuality max, AtomicBoolean stop, Runnable notify) {
+    public void extract(VideoInfo info, AtomicBoolean stop, Runnable notify) {
         try {
             downloadone(info, stop, notify);
 
-            getVideo(info, sNextVideoURL, max);
+            getVideo(info, sNextVideoURL);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
