@@ -72,7 +72,7 @@ public class AppManagedDownload {
             //
             // if youtube does not have video with requested quality, program
             // will loop indefinitely in the retry loop.
-            //info.setVq(VideoQuality.p480);
+            info.setVq(VideoQuality.p480);
 
             VGet v = new VGet(info, new File("/Users/axet/Downloads"));
 
