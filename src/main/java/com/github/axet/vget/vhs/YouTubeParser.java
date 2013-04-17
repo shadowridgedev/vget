@@ -5,6 +5,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,7 +71,7 @@ public class YouTubeParser extends VGetParser {
         }
     }
 
-    HashMap<VideoQuality, URL> sNextVideoURL = new HashMap<VideoQuality, URL>();
+    List<VideoDownload> sNextVideoURL = new ArrayList<VideoDownload>();
 
     URL source;
 
@@ -137,35 +138,36 @@ public class YouTubeParser extends VGetParser {
         URL u = new URL(url);
 
         if (u != null)
-            sNextVideoURL.put(vd, u);
+            sNextVideoURL.add(new VideoDownload(vd, u));
     }
 
-    static Map<Integer, VideoQuality> itagMap = new HashMap<Integer, VideoInfo.VideoQuality>() {
+    // http://en.wikipedia.org/wiki/YouTube#Quality_and_codecs
+
+    static final Map<Integer, VideoQuality> itagMap = new HashMap<Integer, VideoInfo.VideoQuality>() {
         private static final long serialVersionUID = -6925194111122038477L;
         {
-            // mp4
-            put(38, VideoQuality.p1080);
-            put(37, VideoQuality.p1080);
-            // webm
+            put(120, VideoQuality.p720);
+            put(102, VideoQuality.p720);
+            put(101, VideoQuality.p360);
+            put(100, VideoQuality.p360);
+            put(85, VideoQuality.p520);
+            put(84, VideoQuality.p720);
+            put(83, VideoQuality.p240);
+            put(82, VideoQuality.p360);
             put(46, VideoQuality.p1080);
-            // mp4
-            put(22, VideoQuality.p720);
-            // webm
             put(45, VideoQuality.p720);
-            // mp4
-            put(35, VideoQuality.p480);
-            // webm
             put(44, VideoQuality.p480);
-            // mp4
-            put(18, VideoQuality.p360);
-            // flv
-            put(34, VideoQuality.p360);
-            // webm
             put(43, VideoQuality.p360);
-            // flv
+            put(38, VideoQuality.p3072);
+            put(37, VideoQuality.p1080);
+            put(36, VideoQuality.p240);
+            put(35, VideoQuality.p480);
+            put(34, VideoQuality.p360);
+            put(22, VideoQuality.p720);
+            put(18, VideoQuality.p360);
+            put(17, VideoQuality.p144);
             put(6, VideoQuality.p270);
-            // flv
-            put(5, VideoQuality.p224);
+            put(5, VideoQuality.p240);
         }
     };
 

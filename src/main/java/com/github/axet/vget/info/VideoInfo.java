@@ -10,19 +10,21 @@ import com.github.axet.wget.info.ex.DownloadInterruptedError;
 
 public class VideoInfo {
 
+    // keep it in order hi->lo
     public enum VideoQuality {
-        p2304, p1080, p720, p480, p360, p270, p224
+        p3072, p2304, p1080, p720, p520, p480, p360, p270, p240, p224, p144
     }
 
     public enum States {
         QUEUE, EXTRACTING, EXTRACTING_DONE, DOWNLOADING, RETRYING, DONE, ERROR, STOP
     }
 
+    // user friendly url (not direct video stream url)
+    private URL web;
+
     private VideoQuality vq;
     private DownloadInfo info;
     private String title;
-    // user friendly url (not direct video stream url)
-    private URL web;
     private URL icon;
 
     // states, three variables
@@ -186,4 +188,5 @@ public class VideoInfo {
     public void setIcon(URL icon) {
         this.icon = icon;
     }
+
 }

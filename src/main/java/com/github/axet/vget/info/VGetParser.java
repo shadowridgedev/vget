@@ -1,8 +1,9 @@
 package com.github.axet.vget.info;
 
 import java.net.URL;
-import java.util.Arrays;
-import java.util.Map;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.github.axet.vget.info.VideoInfo.VideoQuality;
@@ -12,12 +13,32 @@ import com.github.axet.wget.info.ex.DownloadRetry;
 
 public abstract class VGetParser {
 
-    static public final VideoQuality[] VIDEOQUALITYS = new VideoQuality[] { VideoQuality.p2304, VideoQuality.p1080,
-            VideoQuality.p720, VideoQuality.p480, VideoQuality.p360, VideoQuality.p270, VideoQuality.p224 };
+    static public class VideoDownload {
+        public VideoQuality vq;
+        public URL url;
+
+        public VideoDownload(VideoQuality vq, URL u) {
+            this.vq = vq;
+            this.url = u;
+        }
+    }
+
+    static public class VideoContentFirst implements Comparator<VideoDownload> {
+
+        @Override
+        public int compare(VideoDownload o1, VideoDownload o2) {
+            Integer i1 = o1.vq.ordinal();
+            Integer i2 = o2.vq.ordinal();
+            Integer ic = i1.compareTo(i2);
+
+            return ic;
+        }
+
+    }
 
     abstract public void extract(VideoInfo info, AtomicBoolean stop, Runnable notify);
 
-    public void getVideo(VideoInfo vvi, Map<VideoQuality, URL> sNextVideoURL) {
+    public void getVideo(VideoInfo vvi, List<VideoDownload> sNextVideoURL) {
         if (sNextVideoURL.size() == 0) {
             // rare error:
             //
@@ -29,21 +50,19 @@ public abstract class VGetParser {
                     + " wait until youtube will process the video");
         }
 
-        VideoQuality maxQuality = vvi.getVq();
+        Collections.sort(sNextVideoURL, new VideoContentFirst());
 
-        int i = 0;
+        for (int i = 0; i < sNextVideoURL.size(); i++) {
+            VideoDownload v = sNextVideoURL.get(i);
 
-        if (maxQuality != null) {
-            i = Arrays.binarySearch(VIDEOQUALITYS, maxQuality);
+            boolean found = true;
 
-            if (i == -1)
-                i = VIDEOQUALITYS.length;
-        }
+            if (vvi.getVq() != null)
+                found &= vvi.getVq().equals(v.vq);
 
-        for (; i < VIDEOQUALITYS.length; i++) {
-            if (sNextVideoURL.containsKey(VIDEOQUALITYS[i])) {
-                vvi.setVq(VIDEOQUALITYS[i]);
-                DownloadInfo info = new DownloadInfo(sNextVideoURL.get(VIDEOQUALITYS[i]));
+            if (found) {
+                vvi.setVq(v.vq);
+                DownloadInfo info = new DownloadInfo(v.url);
                 vvi.setInfo(info);
                 return;
             }

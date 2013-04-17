@@ -2,7 +2,8 @@ package com.github.axet.vget.vhs;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -21,7 +22,7 @@ import com.github.axet.wget.info.ex.DownloadError;
 
 public class VimeoParser extends VGetParser {
 
-    HashMap<VideoQuality, URL> sNextVideoURL = new HashMap<VideoQuality, URL>();
+    List<VideoDownload> sNextVideoURL = new ArrayList<VideoDownload>();
 
     URL source;
 
@@ -157,10 +158,10 @@ public class VimeoParser extends VGetParser {
 
             // can be 1080p or 720p
             if (qualities.contains("hd"))
-                sNextVideoURL.put(VideoQuality.p1080, new URL(hd));
+                sNextVideoURL.add(new VideoDownload(VideoQuality.p1080, new URL(hd)));
             // can be 360p or 480p
             if (qualities.contains("sd"))
-                sNextVideoURL.put(VideoQuality.p480, new URL(sd));
+                sNextVideoURL.add(new VideoDownload(VideoQuality.p480, new URL(sd)));
 
             info.setIcon(new URL(icon));
         } catch (MalformedURLException e) {
