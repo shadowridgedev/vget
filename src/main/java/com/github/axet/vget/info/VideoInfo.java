@@ -43,15 +43,31 @@ public class VideoInfo {
      */
     public VideoInfo(URL web) {
         this.setWeb(web);
-        setState(States.QUEUE);
+
+        reset();
     }
 
+    /**
+     * check if we have call extract()
+     * 
+     * @return true - if extract() already been called
+     */
     public boolean empty() {
         return info == null;
     }
 
+    /**
+     * reset videoinfo state. make it simialar as after calling constructor
+     */
     public void reset() {
+        setState(States.QUEUE);
+
         info = null;
+        vq = null;
+        title = null;
+        icon = null;
+        exception = null;
+        delay = 0;
     }
 
     public String getTitle() {
