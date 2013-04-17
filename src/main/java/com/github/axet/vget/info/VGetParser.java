@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.github.axet.vget.info.VideoInfo.VideoQuality;
 import com.github.axet.wget.info.DownloadInfo;
+import com.github.axet.wget.info.ex.DownloadError;
 import com.github.axet.wget.info.ex.DownloadRetry;
 
 public abstract class VGetParser {
@@ -17,13 +18,27 @@ public abstract class VGetParser {
     abstract public void extract(VideoInfo info, AtomicBoolean stop, Runnable notify);
 
     public void getVideo(VideoInfo vvi, Map<VideoQuality, URL> sNextVideoURL) {
-        VideoQuality maxQuality = vvi.getVq();
-        if (maxQuality == null)
-            maxQuality = VideoQuality.p2304;
+        if (sNextVideoURL.size() == 0) {
+            // rare error:
+            //
+            // The live recording you're trying to play is still being processed
+            // and will be available soon. Sorry, please try again later.
+            //
+            // retry. since youtube may already rendrered propertly quality.
+            throw new DownloadRetry("no video with required quality found,"
+                    + " wait until youtube will process the video");
+        }
 
-        int i = Arrays.binarySearch(VIDEOQUALITYS, maxQuality);
-        if (i == -1)
-            i = 0;
+        VideoQuality maxQuality = vvi.getVq();
+
+        int i = 0;
+
+        if (maxQuality != null) {
+            i = Arrays.binarySearch(VIDEOQUALITYS, maxQuality);
+
+            if (i == -1)
+                i = VIDEOQUALITYS.length;
+        }
 
         for (; i < VIDEOQUALITYS.length; i++) {
             if (sNextVideoURL.containsKey(VIDEOQUALITYS[i])) {
@@ -34,14 +49,9 @@ public abstract class VGetParser {
             }
         }
 
-        // If you choice maximum quality and get the following exception you
-        // have rare error:
-        //
-        // The live recording you're trying to play is still being processed and
-        // will be available soon. Sorry, please try again later.
-        //
-        // retry. since youtube may already rendrered propertly quality.
-        throw new DownloadRetry("no video with required quality found,"
+        // throw download stop if user choice not maximum quality and we have no
+        // video rendered by youtube
+        throw new DownloadError("no video with required quality found,"
                 + " increace VideoInfo.setVq to the maximum and retry download");
     }
 }
