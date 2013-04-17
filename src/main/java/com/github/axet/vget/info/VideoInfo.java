@@ -70,10 +70,24 @@ public class VideoInfo {
         this.info = info;
     }
 
+    /**
+     * get current video quality. before .extract() call it holds for user
+     * value. after .extract() it holds actual videoquality ready for download
+     * 
+     * @return videoquality of requested URL
+     */
     public VideoQuality getVq() {
         return vq;
     }
 
+    /**
+     * limit maximum quality, or do not call this function if you wish maximum
+     * quality available. if youtube does not have video with requested quality,
+     * program will loop indefinitely in the retry loop.
+     * 
+     * @param vq
+     *            maximum video quality
+     */
     public void setVq(VideoQuality vq) {
         this.vq = vq;
     }
@@ -102,7 +116,7 @@ public class VideoInfo {
             ei.extract(this, stop, notify);
 
             info.setReferer(web);
-            
+
             info.extract(stop, notify);
         } catch (DownloadInterruptedError e) {
             setState(States.STOP, e);
