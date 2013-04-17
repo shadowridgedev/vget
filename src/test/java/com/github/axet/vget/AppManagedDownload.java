@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.github.axet.vget.info.VideoInfo;
+import com.github.axet.vget.info.VideoInfo.VideoQuality;
 import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.DownloadInfo.Part;
 import com.github.axet.wget.info.DownloadInfo.Part.States;
@@ -30,7 +31,7 @@ public class AppManagedDownload {
                     case EXTRACTING:
                     case EXTRACTING_DONE:
                     case DONE:
-                        System.out.println(i1.getState());
+                        System.out.println(i1.getState() + " " + i1.getVq());
                         break;
                     case RETRYING:
                         System.out.println(i1.getState() + " " + i1.getDelay());
@@ -65,10 +66,18 @@ public class AppManagedDownload {
 
             info = new VideoInfo(new URL(url));
 
+            // [OPTIONAL] limit maximum quality, or do not call this function if
+            // you wish
+            // maximum quality available.
+            //
+            // if youtube does not have video with requested quality, program
+            // will loop indefinitely in the retry loop.
+            //info.setVq(VideoQuality.p480);
+
             VGet v = new VGet(info, new File("/Users/axet/Downloads"));
 
-            // optional. only if you dlike to get video title before start
-            // download
+            // [OPTIONAL] call v.extract() only if you d like to get video title before start
+            // download. or just skip it.
             v.extract(stop, notify);
             System.out.println(info.getTitle());
 

@@ -3,6 +3,8 @@ package com.github.axet.vget.info;
 import java.net.URL;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.github.axet.vget.vhs.VimeoParser;
+import com.github.axet.vget.vhs.YouTubeParser;
 import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.ex.DownloadInterruptedError;
 
