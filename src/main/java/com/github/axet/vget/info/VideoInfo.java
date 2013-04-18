@@ -10,19 +10,22 @@ import com.github.axet.wget.info.ex.DownloadInterruptedError;
 
 public class VideoInfo {
 
+    // keep it in order hi->lo
     public enum VideoQuality {
-        p2304, p1080, p720, p480, p360, p270, p224
+        p3072, p2304, p1080, p720, p520, p480, p360, p270, p240, p224, p144
     }
 
     public enum States {
         QUEUE, EXTRACTING, EXTRACTING_DONE, DOWNLOADING, RETRYING, DONE, ERROR, STOP
     }
 
+    // user friendly url (not direct video stream url)
+    private URL web;
+    private VideoQuality userQuality;
+
     private VideoQuality vq;
     private DownloadInfo info;
     private String title;
-    // user friendly url (not direct video stream url)
-    private URL web;
     private URL icon;
 
     // states, three variables
@@ -43,15 +46,31 @@ public class VideoInfo {
      */
     public VideoInfo(URL web) {
         this.setWeb(web);
-        setState(States.QUEUE);
+
+        reset();
     }
 
+    /**
+     * check if we have call extract()
+     * 
+     * @return true - if extract() already been called
+     */
     public boolean empty() {
         return info == null;
     }
 
+    /**
+     * reset videoinfo state. make it simialar as after calling constructor
+     */
     public void reset() {
+        setState(States.QUEUE);
+
         info = null;
+        vq = null;
+        title = null;
+        icon = null;
+        exception = null;
+        delay = 0;
     }
 
     public String getTitle() {
@@ -70,11 +89,21 @@ public class VideoInfo {
         this.info = info;
     }
 
-    public VideoQuality getVq() {
+    /**
+     * get current video quality. holds actual videoquality ready for download
+     * 
+     * @return videoquality of requested URL
+     */
+    public VideoQuality getVideoQuality() {
         return vq;
     }
 
-    public void setVq(VideoQuality vq) {
+    /**
+     * 
+     * @param vq
+     *            video quality
+     */
+    public void setVideoQuality(VideoQuality vq) {
         this.vq = vq;
     }
 
@@ -102,7 +131,7 @@ public class VideoInfo {
             ei.extract(this, stop, notify);
 
             info.setReferer(web);
-            
+
             info.extract(stop, notify);
         } catch (DownloadInterruptedError e) {
             setState(States.STOP, e);
@@ -156,4 +185,20 @@ public class VideoInfo {
     public void setIcon(URL icon) {
         this.icon = icon;
     }
+
+    public VideoQuality getUserQuality() {
+        return userQuality;
+    }
+
+    /**
+     * limit maximum quality, or do not call this function if you wish maximum
+     * quality available. if youtube does not have video with requested quality,
+     * program will raise an exception
+     * 
+     * @param userQuality
+     */
+    public void setUserQuality(VideoQuality userQuality) {
+        this.userQuality = userQuality;
+    }
+
 }

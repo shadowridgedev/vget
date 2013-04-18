@@ -35,17 +35,11 @@ public class VGet {
     File targetFile = null;
 
     public VGet(URL source, File targetDir) {
-        VideoInfo info = new VideoInfo(source);
-
-        create(info, targetDir);
+        this(new VideoInfo(source), targetDir);
     }
 
     public VGet(VideoInfo info, File targetDir) {
-        create(info, targetDir);
-    }
-
-    void create(VideoInfo video, File targetDir) {
-        this.info = video;
+        this.info = info;
         this.targetDir = targetDir;
     }
 

@@ -1,47 +1,76 @@
 package com.github.axet.vget.info;
 
 import java.net.URL;
-import java.util.Arrays;
-import java.util.Map;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.github.axet.vget.info.VideoInfo.VideoQuality;
 import com.github.axet.wget.info.DownloadInfo;
+import com.github.axet.wget.info.ex.DownloadError;
 import com.github.axet.wget.info.ex.DownloadRetry;
 
 public abstract class VGetParser {
 
-    static public final VideoQuality[] VIDEOQUALITYS = new VideoQuality[] { VideoQuality.p2304, VideoQuality.p1080,
-            VideoQuality.p720, VideoQuality.p480, VideoQuality.p360, VideoQuality.p270, VideoQuality.p224 };
+    static public class VideoDownload {
+        public VideoQuality vq;
+        public URL url;
+
+        public VideoDownload(VideoQuality vq, URL u) {
+            this.vq = vq;
+            this.url = u;
+        }
+    }
+
+    static public class VideoContentFirst implements Comparator<VideoDownload> {
+
+        @Override
+        public int compare(VideoDownload o1, VideoDownload o2) {
+            Integer i1 = o1.vq.ordinal();
+            Integer i2 = o2.vq.ordinal();
+            Integer ic = i1.compareTo(i2);
+
+            return ic;
+        }
+
+    }
 
     abstract public void extract(VideoInfo info, AtomicBoolean stop, Runnable notify);
 
-    public void getVideo(VideoInfo vvi, Map<VideoQuality, URL> sNextVideoURL) {
-        VideoQuality maxQuality = vvi.getVq();
-        if (maxQuality == null)
-            maxQuality = VideoQuality.p2304;
+    public void getVideo(VideoInfo vvi, List<VideoDownload> sNextVideoURL) {
+        if (sNextVideoURL.size() == 0) {
+            // rare error:
+            //
+            // The live recording you're trying to play is still being processed
+            // and will be available soon. Sorry, please try again later.
+            //
+            // retry. since youtube may already rendrered propertly quality.
+            throw new DownloadRetry("no video with required quality found,"
+                    + " wait until youtube will process the video");
+        }
 
-        int i = Arrays.binarySearch(VIDEOQUALITYS, maxQuality);
-        if (i == -1)
-            i = 0;
+        Collections.sort(sNextVideoURL, new VideoContentFirst());
 
-        for (; i < VIDEOQUALITYS.length; i++) {
-            if (sNextVideoURL.containsKey(VIDEOQUALITYS[i])) {
-                vvi.setVq(VIDEOQUALITYS[i]);
-                DownloadInfo info = new DownloadInfo(sNextVideoURL.get(VIDEOQUALITYS[i]));
+        for (int i = 0; i < sNextVideoURL.size(); i++) {
+            VideoDownload v = sNextVideoURL.get(i);
+
+            boolean found = true;
+
+            if (vvi.getUserQuality() != null)
+                found &= vvi.getUserQuality().equals(v.vq);
+
+            if (found) {
+                vvi.setVideoQuality(v.vq);
+                DownloadInfo info = new DownloadInfo(v.url);
                 vvi.setInfo(info);
                 return;
             }
         }
 
-        // If you choice maximum quality and get the following exception you
-        // have rare error:
-        //
-        // The live recording you're trying to play is still being processed and
-        // will be available soon. Sorry, please try again later.
-        //
-        // retry. since youtube may already rendrered propertly quality.
-        throw new DownloadRetry("no video with required quality found,"
+        // throw download stop if user choice not maximum quality and we have no
+        // video rendered by youtube
+        throw new DownloadError("no video with required quality found,"
                 + " increace VideoInfo.setVq to the maximum and retry download");
     }
 }

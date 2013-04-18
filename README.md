@@ -111,8 +111,9 @@ Here is a three kind of exceptions.
                 // you wish
                 // maximum quality available.
                 //
-                // if youtube does not have video with requested quality, program
-                // will loop indefinitely in the retry loop.
+                // if youtube does not have video with requested quality, programm
+                // will raise an exception
+    
                 info.setVq(VideoQuality.p480);
 
                 VGet v = new VGet(info, new File("/Users/axet/Downloads"));
