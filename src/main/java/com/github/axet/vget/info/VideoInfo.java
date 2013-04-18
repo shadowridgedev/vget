@@ -101,7 +101,7 @@ public class VideoInfo {
     /**
      * limit maximum quality, or do not call this function if you wish maximum
      * quality available. if youtube does not have video with requested quality,
-     * program will loop indefinitely in the retry loop.
+     * program will raise an exception
      * 
      * @param vq
      *            maximum video quality

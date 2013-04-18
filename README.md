@@ -111,7 +111,7 @@ Here is a three kind of exceptions.
                 // maximum quality available.
                 //
                 // if youtube does not have video with requested quality, programm
-                // will loop indefenetly in the retry loop.
+                // will raise an exception
     
                 info.setVq(VideoQuality.p480);
 
