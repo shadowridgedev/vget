@@ -90,8 +90,7 @@ public class VideoInfo {
     }
 
     /**
-     * get current video quality. before .extract() call it holds for user
-     * value. after .extract() it holds actual videoquality ready for download
+     * get current video quality. holds actual videoquality ready for download
      * 
      * @return videoquality of requested URL
      */
