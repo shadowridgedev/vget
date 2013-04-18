@@ -107,7 +107,8 @@ Here is a three kind of exceptions.
     
                 info = new VideoInfo(new URL("http://vimeo.com/52716355"));
 
-                // limit maximum quality, or do not call this function if you wish
+                // [OPTIONAL] limit maximum quality, or do not call this function if
+                // you wish
                 // maximum quality available.
                 //
                 // if youtube does not have video with requested quality, programm
@@ -117,8 +118,8 @@ Here is a three kind of exceptions.
 
                 VGet v = new VGet(info, new File("/Users/axet/Downloads"));
     
-                // optional. only if you dlike to get video title before start
-                // download
+                // [OPTIONAL] call v.extract() only if you d like to get video title before start
+                // download. or just skip it.
                 v.extract(stop, notify);
                 System.out.println(info.getTitle());
     
@@ -141,5 +142,5 @@ Here is a three kind of exceptions.
     <dependency>
       <groupId>com.github.axet</groupId>
       <artifactId>vget</artifactId>
-      <version>1.0.45</version>
+      <version>1.0.46</version>
     </dependency>
