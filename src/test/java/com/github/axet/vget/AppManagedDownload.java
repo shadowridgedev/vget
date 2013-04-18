@@ -31,7 +31,7 @@ public class AppManagedDownload {
                     case EXTRACTING:
                     case EXTRACTING_DONE:
                     case DONE:
-                        System.out.println(i1.getState() + " " + i1.getVq());
+                        System.out.println(i1.getState() + " " + i1.getVideoQuality());
                         break;
                     case RETRYING:
                         System.out.println(i1.getState() + " " + i1.getDelay());
@@ -71,7 +71,7 @@ public class AppManagedDownload {
             //
             // if youtube does not have video with requested quality, program
             // will loop indefinitely in the retry loop.
-            info.setVq(VideoQuality.p480);
+            info.setUserQuality(VideoQuality.p480);
 
             VGet v = new VGet(info, new File("/Users/axet/Downloads"));
 

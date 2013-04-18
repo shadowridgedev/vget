@@ -57,11 +57,11 @@ public abstract class VGetParser {
 
             boolean found = true;
 
-            if (vvi.getVq() != null)
-                found &= vvi.getVq().equals(v.vq);
+            if (vvi.getUserQuality() != null)
+                found &= vvi.getUserQuality().equals(v.vq);
 
             if (found) {
-                vvi.setVq(v.vq);
+                vvi.setVideoQuality(v.vq);
                 DownloadInfo info = new DownloadInfo(v.url);
                 vvi.setInfo(info);
                 return;

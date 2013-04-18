@@ -21,6 +21,7 @@ public class VideoInfo {
 
     // user friendly url (not direct video stream url)
     private URL web;
+    private VideoQuality userQuality;
 
     private VideoQuality vq;
     private DownloadInfo info;
@@ -94,19 +95,16 @@ public class VideoInfo {
      * 
      * @return videoquality of requested URL
      */
-    public VideoQuality getVq() {
+    public VideoQuality getVideoQuality() {
         return vq;
     }
 
     /**
-     * limit maximum quality, or do not call this function if you wish maximum
-     * quality available. if youtube does not have video with requested quality,
-     * program will raise an exception
      * 
      * @param vq
-     *            maximum video quality
+     *            video quality
      */
-    public void setVq(VideoQuality vq) {
+    public void setVideoQuality(VideoQuality vq) {
         this.vq = vq;
     }
 
@@ -187,6 +185,21 @@ public class VideoInfo {
 
     public void setIcon(URL icon) {
         this.icon = icon;
+    }
+
+    public VideoQuality getUserQuality() {
+        return userQuality;
+    }
+
+    /**
+     * limit maximum quality, or do not call this function if you wish maximum
+     * quality available. if youtube does not have video with requested quality,
+     * program will raise an exception
+     * 
+     * @param userQuality
+     */
+    public void setUserQuality(VideoQuality userQuality) {
+        this.userQuality = userQuality;
     }
 
 }
