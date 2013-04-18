@@ -114,7 +114,7 @@ Here is a three kind of exceptions.
                 // if youtube does not have video with requested quality, programm
                 // will raise an exception
     
-                info.setVq(VideoQuality.p480);
+                info.setUserQuality(VideoQuality.p480);
 
                 VGet v = new VGet(info, new File("/Users/axet/Downloads"));
     
