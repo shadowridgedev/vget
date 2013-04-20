@@ -15,7 +15,7 @@ Good examples here:
 
 ## Exceptions
 
-Here is a two kind of exceptions.
+Here are a two kind of exceptions.
 
 1) Fatal exception. all RuntimeException's
   We shall stop application
