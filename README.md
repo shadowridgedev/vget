@@ -15,7 +15,7 @@ Good examples here:
 
 ## Exceptions
 
-Here is a three kind of exceptions.
+Here are a two kind of exceptions.
 
 1) Fatal exception. all RuntimeException's
   We shall stop application
@@ -114,7 +114,7 @@ Here is a three kind of exceptions.
                 // if youtube does not have video with requested quality, programm
                 // will raise an exception
     
-                info.setVq(VideoQuality.p480);
+                info.setUserQuality(VideoQuality.p480);
 
                 VGet v = new VGet(info, new File("/Users/axet/Downloads"));
     
@@ -142,5 +142,5 @@ Here is a three kind of exceptions.
     <dependency>
       <groupId>com.github.axet</groupId>
       <artifactId>vget</artifactId>
-      <version>1.0.46</version>
+      <version>1.1.0</version>
     </dependency>
