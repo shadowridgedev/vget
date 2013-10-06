@@ -122,7 +122,7 @@ Here are a two kind of exceptions.
                 // you wish maximum quality available.
                 //
                 // if youtube does not have video with requested quality, program
-                // will loop indefinitely in the retry loop.
+                // will raise an exception.
                 VideoInfoUser user = new VideoInfoUser();
                 user.setUserQuality(VideoQuality.p480);
     
