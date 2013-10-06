@@ -36,9 +36,9 @@ public abstract class VGetParser {
 
     }
 
-    abstract public void extract(VideoInfo info, AtomicBoolean stop, Runnable notify);
+    abstract public void extract(VideoInfo info, VideoInfoUser user, AtomicBoolean stop, Runnable notify);
 
-    public void getVideo(VideoInfo vvi, List<VideoDownload> sNextVideoURL) {
+    public void getVideo(VideoInfo vvi, VideoInfoUser user, List<VideoDownload> sNextVideoURL) {
         if (sNextVideoURL.size() == 0) {
             // rare error:
             //
@@ -57,8 +57,8 @@ public abstract class VGetParser {
 
             boolean found = true;
 
-            if (vvi.getUserQuality() != null)
-                found &= vvi.getUserQuality().equals(v.vq);
+            if (user.getUserQuality() != null)
+                found &= user.getUserQuality().equals(v.vq);
 
             if (found) {
                 vvi.setVideoQuality(v.vq);

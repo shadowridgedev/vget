@@ -11,6 +11,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.github.axet.vget.info.VideoInfo;
 import com.github.axet.vget.info.VideoInfo.States;
+import com.github.axet.vget.info.VideoInfoUser;
 import com.github.axet.wget.Direct;
 import com.github.axet.wget.DirectMultipart;
 import com.github.axet.wget.DirectRange;
@@ -61,7 +62,15 @@ public class VGet {
     }
 
     public void download() {
-        download(new AtomicBoolean(false), new Runnable() {
+        download(new VideoInfoUser(), new AtomicBoolean(false), new Runnable() {
+            @Override
+            public void run() {
+            }
+        });
+    }
+
+    public void download(VideoInfoUser user) {
+        download(user, new AtomicBoolean(false), new Runnable() {
             @Override
             public void run() {
             }
@@ -114,7 +123,7 @@ public class VGet {
         return false;
     }
 
-    void retry(AtomicBoolean stop, Runnable notify, Throwable e) {
+    void retry(VideoInfoUser user, AtomicBoolean stop, Runnable notify, Throwable e) {
         boolean retracted = false;
 
         while (!retracted) {
@@ -141,7 +150,7 @@ public class VGet {
                 // download
 
                 DownloadInfo infoOld = info.getInfo();
-                info.extract(stop, notify);
+                info.extract(user, stop, notify);
                 DownloadInfo infoNew = info.getInfo();
 
                 if (infoOld != null && infoOld.resume(infoNew)) {
@@ -241,35 +250,39 @@ public class VGet {
         return getVideo().empty();
     }
 
+    public void extract(AtomicBoolean stop, Runnable notify) {
+        extract(new VideoInfoUser(), stop, notify);
+    }
+    
     /**
      * extract video information, retry until success
      * 
      * @param stop
      * @param notify
      */
-    public void extract(AtomicBoolean stop, Runnable notify) {
+    public void extract(VideoInfoUser user, AtomicBoolean stop, Runnable notify) {
         while (!done(stop)) {
             try {
                 if (info.empty()) {
                     info.setState(States.EXTRACTING);
-                    info.extract(stop, notify);
+                    info.extract(user, stop, notify);
                     info.setState(States.EXTRACTING_DONE);
                     notify.run();
                 }
                 return;
             } catch (DownloadRetry e) {
-                retry(stop, notify, e);
+                retry(user, stop, notify, e);
             } catch (DownloadMultipartError e) {
                 checkFileNotFound(e);
                 checkRetry(e);
-                retry(stop, notify, e);
+                retry(user, stop, notify, e);
             } catch (DownloadIOCodeError e) {
                 if (retry(e))
-                    retry(stop, notify, e);
+                    retry(user, stop, notify, e);
                 else
                     throw e;
             } catch (DownloadIOError e) {
-                retry(stop, notify, e);
+                retry(user, stop, notify, e);
             }
         }
     }
@@ -323,9 +336,13 @@ public class VGet {
     }
 
     public void download(final AtomicBoolean stop, final Runnable notify) {
+        download(new VideoInfoUser(), stop, notify);
+    }
+    
+    public void download(VideoInfoUser user, final AtomicBoolean stop, final Runnable notify) {
         try {
             if (empty()) {
-                extract(stop, notify);
+                extract(user, stop, notify);
             }
 
             while (!done(stop)) {
@@ -381,18 +398,18 @@ public class VGet {
                     // break while()
                     return;
                 } catch (DownloadRetry e) {
-                    retry(stop, notify, e);
+                    retry(user, stop, notify, e);
                 } catch (DownloadMultipartError e) {
                     checkFileNotFound(e);
                     checkRetry(e);
-                    retry(stop, notify, e);
+                    retry(user, stop, notify, e);
                 } catch (DownloadIOCodeError e) {
                     if (retry(e))
-                        retry(stop, notify, e);
+                        retry(user, stop, notify, e);
                     else
                         throw e;
                 } catch (DownloadIOError e) {
-                    retry(stop, notify, e);
+                    retry(user, stop, notify, e);
                 }
             }
         } catch (DownloadInterruptedError e) {

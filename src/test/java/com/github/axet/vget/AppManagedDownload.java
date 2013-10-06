@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.github.axet.vget.info.VideoInfo;
 import com.github.axet.vget.info.VideoInfo.VideoQuality;
+import com.github.axet.vget.info.VideoInfoUser;
 import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.DownloadInfo.Part;
 import com.github.axet.wget.info.DownloadInfo.Part.States;
@@ -16,7 +17,7 @@ public class AppManagedDownload {
     VideoInfo info;
     long last;
 
-    public void run(String url) {
+    public void run(String url, File path) {
         try {
             AtomicBoolean stop = new AtomicBoolean(false);
             Runnable notify = new Runnable() {
@@ -71,16 +72,17 @@ public class AppManagedDownload {
             //
             // if youtube does not have video with requested quality, program
             // will loop indefinitely in the retry loop.
-            info.setUserQuality(VideoQuality.p480);
+            VideoInfoUser user = new VideoInfoUser();
+            user.setUserQuality(VideoQuality.p480);
 
-            VGet v = new VGet(info, new File("/Users/axet/Downloads"));
+            VGet v = new VGet(info, path);
 
             // [OPTIONAL] call v.extract() only if you d like to get video title
             // before start download. or just skip it.
-            v.extract(stop, notify);
+            v.extract(user, stop, notify);
             System.out.println(info.getTitle());
 
-            v.download(stop, notify);
+            v.download(user, stop, notify);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -90,6 +92,6 @@ public class AppManagedDownload {
 
     public static void main(String[] args) {
         AppManagedDownload e = new AppManagedDownload();
-        e.run(args[0]);
+        e.run(args[0], new File(args[1]));
     }
 }

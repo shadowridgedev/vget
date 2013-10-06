@@ -16,6 +16,7 @@ import com.github.axet.vget.info.VGetParser;
 import com.github.axet.vget.info.VideoInfo;
 import com.github.axet.vget.info.VideoInfo.States;
 import com.github.axet.vget.info.VideoInfo.VideoQuality;
+import com.github.axet.vget.info.VideoInfoUser;
 import com.github.axet.wget.WGet;
 import com.github.axet.wget.WGet.HtmlLoader;
 import com.github.axet.wget.info.ex.DownloadError;
@@ -170,9 +171,9 @@ public class VimeoParser extends VGetParser {
     }
 
     @Override
-    public void extract(VideoInfo info, AtomicBoolean stop, Runnable notify) {
+    public void extract(VideoInfo info, VideoInfoUser user, AtomicBoolean stop, Runnable notify) {
         downloadone(info, stop, notify);
-        getVideo(info, sNextVideoURL);
+        getVideo(info, user, sNextVideoURL);
     }
 
 }
