@@ -92,6 +92,10 @@ public class AppManagedDownload {
 
     public static void main(String[] args) {
         AppManagedDownload e = new AppManagedDownload();
-        e.run(args[0], new File(args[1]));
+        // ex: http://www.youtube.com/watch?v=Nj6PFaDmp6c
+        String url = args[0];
+        // ex: /Users/axet/Downloads/
+        String path = args[1];
+        e.run(url, new File(path));
     }
 }
