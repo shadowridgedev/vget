@@ -46,7 +46,7 @@ public abstract class VGetParser {
             // and will be available soon. Sorry, please try again later.
             //
             // retry. since youtube may already rendrered propertly quality.
-            throw new DownloadRetry("no video with required quality found,"
+            throw new DownloadRetry("empty video download list,"
                     + " wait until youtube will process the video");
         }
 
@@ -70,6 +70,11 @@ public abstract class VGetParser {
 
         // throw download stop if user choice not maximum quality and we have no
         // video rendered by youtube
+
+        // customize exception
+        if (user.getUserQuality() != null)
+            throw new DownloadError("no video user quality found");
+
         throw new DownloadError("no video with required quality found,"
                 + " increace VideoInfo.setVq to the maximum and retry download");
     }
