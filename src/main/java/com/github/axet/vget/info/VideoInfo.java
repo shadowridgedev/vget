@@ -21,7 +21,6 @@ public class VideoInfo {
 
     // user friendly url (not direct video stream url)
     private URL web;
-    private VideoQuality userQuality;
 
     private VideoQuality vq;
     private DownloadInfo info;
@@ -115,7 +114,7 @@ public class VideoInfo {
         this.web = source;
     }
 
-    public void extract(AtomicBoolean stop, Runnable notify) {
+    public void extract(VideoInfoUser user, AtomicBoolean stop, Runnable notify) {
         VGetParser ei = null;
 
         if (YouTubeParser.probe(web))
@@ -128,7 +127,7 @@ public class VideoInfo {
             throw new RuntimeException("unsupported web site");
 
         try {
-            ei.extract(this, stop, notify);
+            ei.extract(this, user, stop, notify);
 
             info.setReferer(web);
 
@@ -184,21 +183,6 @@ public class VideoInfo {
 
     public void setIcon(URL icon) {
         this.icon = icon;
-    }
-
-    public VideoQuality getUserQuality() {
-        return userQuality;
-    }
-
-    /**
-     * limit maximum quality, or do not call this function if you wish maximum
-     * quality available. if youtube does not have video with requested quality,
-     * program will raise an exception
-     * 
-     * @param userQuality
-     */
-    public void setUserQuality(VideoQuality userQuality) {
-        this.userQuality = userQuality;
     }
 
 }
