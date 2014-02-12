@@ -36,7 +36,12 @@ public abstract class VGetParser {
 
     }
 
-    abstract public void extract(VideoInfo info, VideoInfoUser user, AtomicBoolean stop, Runnable notify);
+    public abstract List<VideoDownload> extract(final VideoInfo info, final AtomicBoolean stop, final Runnable notify);
+
+    public void extract(VideoInfo info, VideoInfoUser user, AtomicBoolean stop, Runnable notify) {
+        List<VideoDownload> list = extract(info, stop, notify);
+        getVideo(info, user, list);
+    }
 
     public void getVideo(VideoInfo vvi, VideoInfoUser user, List<VideoDownload> sNextVideoURL) {
         if (sNextVideoURL.size() == 0) {
@@ -46,8 +51,7 @@ public abstract class VGetParser {
             // and will be available soon. Sorry, please try again later.
             //
             // retry. since youtube may already rendrered propertly quality.
-            throw new DownloadRetry("empty video download list,"
-                    + " wait until youtube will process the video");
+            throw new DownloadRetry("empty video download list," + " wait until youtube will process the video");
         }
 
         Collections.sort(sNextVideoURL, new VideoContentFirst());

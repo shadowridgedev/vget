@@ -22,7 +22,6 @@ import com.github.axet.vget.info.VGetParser;
 import com.github.axet.vget.info.VideoInfo;
 import com.github.axet.vget.info.VideoInfo.States;
 import com.github.axet.vget.info.VideoInfo.VideoQuality;
-import com.github.axet.vget.info.VideoInfoUser;
 import com.github.axet.wget.WGet;
 import com.github.axet.wget.info.ex.DownloadError;
 
@@ -72,8 +71,6 @@ public class YouTubeParser extends VGetParser {
         }
     }
 
-    List<VideoDownload> sNextVideoURL = new ArrayList<VideoDownload>();
-
     URL source;
 
     public YouTubeParser(URL input) {
@@ -84,11 +81,17 @@ public class YouTubeParser extends VGetParser {
         return url.toString().contains("youtube.com");
     }
 
-    void downloadone(VideoInfo info, AtomicBoolean stop, Runnable notify) throws Exception {
+    public List<VideoDownload> extract(final VideoInfo info, final AtomicBoolean stop, final Runnable notify) {
         try {
-            extractEmbedded(info, stop, notify);
-        } catch (EmbeddingDisabled e) {
-            streamCpature(info, stop, notify);
+            try {
+                return extractEmbedded(info, stop, notify);
+            } catch (EmbeddingDisabled e) {
+                return streamCpature(info, stop, notify);
+            }
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -100,7 +103,10 @@ public class YouTubeParser extends VGetParser {
      * @param notify
      * @throws Exception
      */
-    void streamCpature(final VideoInfo info, final AtomicBoolean stop, final Runnable notify) throws Exception {
+    List<VideoDownload> streamCpature(final VideoInfo info, final AtomicBoolean stop, final Runnable notify)
+            throws Exception {
+        List<VideoDownload> sNextVideoURL = new ArrayList<VideoDownload>();
+
         String html;
         html = WGet.getHtml(info.getWeb(), new WGet.HtmlLoader() {
             @Override
@@ -121,8 +127,10 @@ public class YouTubeParser extends VGetParser {
                 notify.run();
             }
         }, stop);
-        extractHtmlInfo(info, html, stop, notify);
+        extractHtmlInfo(sNextVideoURL, info, html, stop, notify);
         extractIcon(info, html);
+
+        return sNextVideoURL;
     }
 
     /**
@@ -132,7 +140,7 @@ public class YouTubeParser extends VGetParser {
      *            download source url
      * @throws MalformedURLException
      */
-    void addVideo(String itag, String url) throws MalformedURLException {
+    void addVideo(List<VideoDownload> sNextVideoURL, String itag, String url) throws MalformedURLException {
         Integer i = Integer.decode(itag);
         VideoQuality vd = itagMap.get(i);
 
@@ -198,7 +206,10 @@ public class YouTubeParser extends VGetParser {
      * @param notify
      * @throws Exception
      */
-    void extractEmbedded(final VideoInfo info, final AtomicBoolean stop, final Runnable notify) throws Exception {
+    List<VideoDownload> extractEmbedded(final VideoInfo info, final AtomicBoolean stop, final Runnable notify)
+            throws Exception {
+        List<VideoDownload> sNextVideoURL = new ArrayList<VideoDownload>();
+
         String id = extractId(source);
         if (id == null) {
             throw new RuntimeException("unknown url");
@@ -251,12 +262,14 @@ public class YouTubeParser extends VGetParser {
 
         String url_encoded_fmt_stream_map = URLDecoder.decode(map.get("url_encoded_fmt_stream_map"), "UTF-8");
 
-        extractUrlEncodedVideos(url_encoded_fmt_stream_map);
+        extractUrlEncodedVideos(sNextVideoURL, url_encoded_fmt_stream_map);
 
         // 'iurlmaxresæ or 'iurlsd' or 'thumbnail_url'
         String icon = map.get("thumbnail_url");
         icon = URLDecoder.decode(icon, "UTF-8");
         info.setIcon(new URL(icon));
+
+        return sNextVideoURL;
     }
 
     void extractIcon(VideoInfo info, String html) {
@@ -290,7 +303,8 @@ public class YouTubeParser extends VGetParser {
         }
     }
 
-    void extractHtmlInfo(VideoInfo info, String html, AtomicBoolean stop, Runnable notify) throws Exception {
+    void extractHtmlInfo(List<VideoDownload> sNextVideoURL, VideoInfo info, String html, AtomicBoolean stop,
+            Runnable notify) throws Exception {
         {
             Pattern age = Pattern.compile("(verify_age)");
             Matcher ageMatch = age.matcher(html);
@@ -318,7 +332,7 @@ public class YouTubeParser extends VGetParser {
                 if (encodMatch.find()) {
                     String sline = encodMatch.group(1);
 
-                    extractUrlEncodedVideos(sline);
+                    extractUrlEncodedVideos(sNextVideoURL, sline);
                 }
 
                 // stream video
@@ -344,7 +358,7 @@ public class YouTubeParser extends VGetParser {
 
                             url = URLDecoder.decode(url, "UTF-8");
 
-                            addVideo(itag, url);
+                            addVideo(sNextVideoURL, itag, url);
                         }
                     }
                 }
@@ -364,7 +378,7 @@ public class YouTubeParser extends VGetParser {
         }
     }
 
-    void extractUrlEncodedVideos(String sline) throws Exception {
+    void extractUrlEncodedVideos(List<VideoDownload> sNextVideoURL, String sline) throws Exception {
         String[] urlStrings = sline.split("url=");
 
         for (String urlString : urlStrings) {
@@ -406,7 +420,7 @@ public class YouTubeParser extends VGetParser {
                             url += "&signature=" + sig;
 
                         if (itag != null) {
-                            addVideo(itag, url);
+                            addVideo(sNextVideoURL, itag, url);
                             continue;
                         }
                     } catch (MalformedURLException e) {
@@ -416,18 +430,4 @@ public class YouTubeParser extends VGetParser {
             }
         }
     }
-
-    @Override
-    public void extract(VideoInfo info, VideoInfoUser user, AtomicBoolean stop, Runnable notify) {
-        try {
-            downloadone(info, stop, notify);
-
-            getVideo(info, user, sNextVideoURL);
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
 }
