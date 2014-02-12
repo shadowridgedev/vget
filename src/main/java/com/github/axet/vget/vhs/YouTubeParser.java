@@ -142,14 +142,11 @@ public class YouTubeParser extends VGetParser {
      *            download source url
      * @throws MalformedURLException
      */
-    void addVideo(List<VideoDownload> sNextVideoURL, String itag, String url) throws MalformedURLException {
+    void addVideo(List<VideoDownload> sNextVideoURL, String itag, URL url) {
         Integer i = Integer.decode(itag);
         VideoQuality vd = itagMap.get(i);
 
-        URL u = new URL(url);
-
-        if (u != null)
-            sNextVideoURL.add(new VideoDownload(vd, u));
+        sNextVideoURL.add(new VideoDownload(vd, url));
     }
 
     // http://en.wikipedia.org/wiki/YouTube#Quality_and_codecs
@@ -219,8 +216,7 @@ public class YouTubeParser extends VGetParser {
 
         info.setTitle(String.format("http://www.youtube.com/watch?v=%s", id));
 
-        String get = String
-                .format("http://www.youtube.com/get_video_info?video_id=%s&el=embedded&ps=default&eurl=", id);
+        String get = String.format("http://www.youtube.com/get_video_info?authuser=0&video_id=%s&el=embedded", id);
 
         URL url = new URL(get);
 
@@ -360,7 +356,7 @@ public class YouTubeParser extends VGetParser {
 
                             url = URLDecoder.decode(url, UTF8);
 
-                            addVideo(sNextVideoURL, itag, url);
+                            addVideo(sNextVideoURL, itag, new URL(url));
                         }
                     }
                 }
@@ -392,13 +388,14 @@ public class YouTubeParser extends VGetParser {
             {
                 String url = null;
                 {
-                    Pattern link = Pattern.compile("([^&]*)&");
+                    Pattern link = Pattern.compile("([^&,]*)[&,]");
                     Matcher linkMatch = link.matcher(urlString);
                     if (linkMatch.find()) {
                         url = linkMatch.group(1);
                         url = URLDecoder.decode(url, UTF8);
                     }
                 }
+
                 String itag = null;
                 {
                     Pattern link = Pattern.compile("itag=(\\d+)");
@@ -407,8 +404,18 @@ public class YouTubeParser extends VGetParser {
                         itag = linkMatch.group(1);
                     }
                 }
+
                 String sig = null;
-                {
+
+                if (sig == null) {
+                    Pattern link = Pattern.compile("&signature=([^&,]*)");
+                    Matcher linkMatch = link.matcher(urlFull);
+                    if (linkMatch.find()) {
+                        sig = linkMatch.group(1);
+                    }
+                }
+
+                if (sig == null) {
                     Pattern link = Pattern.compile("sig=([^&,]*)");
                     Matcher linkMatch = link.matcher(urlFull);
                     if (linkMatch.find()) {
@@ -416,17 +423,22 @@ public class YouTubeParser extends VGetParser {
                     }
                 }
 
+                if (sig == null) {
+                    Pattern link = Pattern.compile("[&,]s=([^&,]*)");
+                    Matcher linkMatch = link.matcher(urlFull);
+                    if (linkMatch.find()) {
+                        sig = linkMatch.group(1);
+                    }
+                }
+                
+                System.err.println(urlString);
+
                 if (url != null && itag != null && sig != null) {
                     try {
-                        new URL(url);
+                        url += "&signature=" + sig;
 
-                        if (sig != null)
-                            url += "&signature=" + sig;
-
-                        if (itag != null) {
-                            addVideo(sNextVideoURL, itag, url);
-                            continue;
-                        }
+                        addVideo(sNextVideoURL, itag, new URL(url));
+                        continue;
                     } catch (MalformedURLException e) {
                         // ignore bad urls
                     }

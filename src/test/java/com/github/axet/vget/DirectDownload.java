@@ -11,10 +11,12 @@ public class DirectDownload {
             String url = args[0];
             // ex: "/Users/axet/Downloads"
             String path = args[1];
+
             VGet v = new VGet(new URL(url), new File(path));
+
             v.download();
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
     }
 

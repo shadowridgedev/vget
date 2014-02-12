@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.github.axet.vget.info.VideoInfo;
-import com.github.axet.vget.info.VideoInfo.VideoQuality;
 import com.github.axet.vget.info.VideoInfoUser;
 import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.DownloadInfo.Part;
@@ -73,7 +72,7 @@ public class AppManagedDownload {
             // if youtube does not have video with requested quality, program
             // will raise en exception.
             VideoInfoUser user = new VideoInfoUser();
-            //user.setUserQuality(VideoQuality.p480);
+            // user.setUserQuality(VideoQuality.p480);
 
             VGet v = new VGet(info, path);
 
