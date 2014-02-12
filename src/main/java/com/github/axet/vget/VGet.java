@@ -35,6 +35,15 @@ public class VGet {
 
     File targetFile = null;
 
+    /**
+     * extract video information constructor
+     * 
+     * @param source
+     */
+    public VGet(URL source) {
+        this(new VideoInfo(source), null);
+    }
+
     public VGet(URL source, File targetDir) {
         this(new VideoInfo(source), targetDir);
     }
@@ -46,6 +55,10 @@ public class VGet {
 
     public void setTarget(File file) {
         targetForce = file;
+    }
+
+    public void setTargetDir(File targetDir) {
+        this.targetDir = targetDir;
     }
 
     /**
@@ -250,6 +263,14 @@ public class VGet {
         return getVideo().empty();
     }
 
+    public void extract() {
+        extract(new AtomicBoolean(false), new Runnable() {
+            @Override
+            public void run() {
+            }
+        });
+    }
+
     public void extract(AtomicBoolean stop, Runnable notify) {
         extract(new VideoInfoUser(), stop, notify);
     }
@@ -340,6 +361,10 @@ public class VGet {
     }
 
     public void download(VideoInfoUser user, final AtomicBoolean stop, final Runnable notify) {
+        if (targetFile == null && targetForce == null && targetDir == null) {
+            throw new RuntimeException("Set download file or directory first");
+        }
+
         try {
             if (empty()) {
                 extract(user, stop, notify);
