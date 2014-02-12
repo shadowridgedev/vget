@@ -71,16 +71,19 @@ public class AppManagedDownload {
             // you wish maximum quality available.
             //
             // if youtube does not have video with requested quality, program
-            // will loop indefinitely in the retry loop.
+            // will raise en exception.
             VideoInfoUser user = new VideoInfoUser();
-            user.setUserQuality(VideoQuality.p480);
+            //user.setUserQuality(VideoQuality.p480);
 
             VGet v = new VGet(info, path);
 
             // [OPTIONAL] call v.extract() only if you d like to get video title
+            // or download url link
             // before start download. or just skip it.
             v.extract(user, stop, notify);
-            System.out.println(info.getTitle());
+
+            System.out.println("Title: " + info.getTitle());
+            System.out.println("Download URL: " + info.getInfo().getSource());
 
             v.download(user, stop, notify);
         } catch (RuntimeException e) {
@@ -92,6 +95,10 @@ public class AppManagedDownload {
 
     public static void main(String[] args) {
         AppManagedDownload e = new AppManagedDownload();
-        e.run(args[0], new File(args[1]));
+        // ex: http://www.youtube.com/watch?v=Nj6PFaDmp6c
+        String url = args[0];
+        // ex: /Users/axet/Downloads/
+        String path = args[1];
+        e.run(url, new File(path));
     }
 }

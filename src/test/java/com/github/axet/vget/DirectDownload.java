@@ -7,7 +7,11 @@ public class DirectDownload {
 
     public static void main(String[] args) {
         try {
-            VGet v = new VGet(new URL(args[0]), new File("/Users/axet/Downloads"));
+            // ex: http://www.youtube.com/watch?v=Nj6PFaDmp6c
+            String url = args[0];
+            // ex: "/Users/axet/Downloads"
+            String path = args[1];
+            VGet v = new VGet(new URL(url), new File(path));
             v.download();
         } catch (Exception e) {
             throw new RuntimeException(e);

@@ -4,8 +4,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -16,16 +15,51 @@ import com.github.axet.vget.info.VGetParser;
 import com.github.axet.vget.info.VideoInfo;
 import com.github.axet.vget.info.VideoInfo.States;
 import com.github.axet.vget.info.VideoInfo.VideoQuality;
-import com.github.axet.vget.info.VideoInfoUser;
 import com.github.axet.wget.WGet;
 import com.github.axet.wget.WGet.HtmlLoader;
 import com.github.axet.wget.info.ex.DownloadError;
+import com.google.gson.Gson;
 
 public class VimeoParser extends VGetParser {
 
-    List<VideoDownload> sNextVideoURL = new ArrayList<VideoDownload>();
-
     URL source;
+
+    public static class VimeoData {
+        public VimeoRequest request;
+        public VimeoVideo video;
+    }
+
+    public static class VimeoVideo {
+        public Map<String, String> thumbs;
+        public String title;
+    }
+
+    public static class VimeoRequest {
+        public String signature;
+        public String session;
+        public long timestamp;
+        public long expires;
+        public VimeoFiles files;
+    }
+
+    public static class VimeoFiles {
+        public ArrayList<String> codecs;
+        public VidemoCodec h264;
+    }
+
+    public static class VidemoCodec {
+        public VideoDownloadLink hd;
+        public VideoDownloadLink sd;
+        public VideoDownloadLink mobile;
+    }
+
+    public static class VideoDownloadLink {
+        public String url;
+        public int height;
+        public int width;
+        public String id;
+        public int bitrate;
+    }
 
     public VimeoParser(URL input) {
         this.source = input;
@@ -57,7 +91,10 @@ public class VimeoParser extends VGetParser {
         return null;
     }
 
-    void downloadone(final VideoInfo info, final AtomicBoolean stop, final Runnable notify) {
+    @Override
+    public List<VideoDownload> extract(final VideoInfo info, final AtomicBoolean stop, final Runnable notify) {
+        List<VideoDownload> list = new ArrayList<VGetParser.VideoDownload>();
+
         try {
             String id;
             String clip;
@@ -66,7 +103,7 @@ public class VimeoParser extends VGetParser {
                 if (id == null) {
                     throw new DownloadError("unknown url");
                 }
-                clip = "http://vimeo.com/" + id;
+                clip = "http://vimeo.com/m/" + id;
             }
 
             URL url = new URL(clip);
@@ -91,89 +128,54 @@ public class VimeoParser extends VGetParser {
                 }
             }, stop);
 
-            String sig;
+            String config;
             {
-                Pattern u = Pattern.compile("\"signature\":\"([0-9a-f]+)\"");
+                Pattern u = Pattern.compile("data-config-url=\"([^\"]+)\"");
                 Matcher um = u.matcher(html);
                 if (!um.find()) {
-                    throw new DownloadError("unknown signature vimeo respond");
+                    throw new DownloadError("unknown config vimeo respond");
                 }
-                sig = um.group(1);
+                config = um.group(1);
             }
 
-            String exp;
-            {
-                Pattern u = Pattern.compile("\"timestamp\":(\\d+)");
-                Matcher um = u.matcher(html);
-                if (!um.find()) {
-                    throw new DownloadError("unknown timestamp vimeo respond");
+            config = StringEscapeUtils.unescapeHtml4(config);
+
+            String htmlConfig = WGet.getHtml(new URL(config), new HtmlLoader() {
+                @Override
+                public void notifyRetry(int delay, Throwable e) {
+                    info.setDelay(delay, e);
+                    notify.run();
                 }
-                exp = um.group(1);
-            }
 
-            // "qualities":["hd","sd","mobile"]
-            Set<String> qualities = new TreeSet<String>();
-            {
-                Pattern u = Pattern.compile("\"qualities\":\\[([^\\]]*\")\\]");
-                Matcher um = u.matcher(html);
-                if (!um.find()) {
-                    throw new DownloadError("unknown qualities vimeo respond");
+                @Override
+                public void notifyDownloading() {
+                    info.setState(States.EXTRACTING);
+                    notify.run();
                 }
-                String list = um.group(1);
-                String[] ll = list.split(",");
-                for (String s : ll) {
-                    qualities.add(s.replaceAll("\"", ""));
+
+                @Override
+                public void notifyMoved() {
+                    info.setState(States.RETRYING);
+                    notify.run();
                 }
-            }
+            }, stop);
 
-            String icon;
-            {
-                Pattern u = Pattern.compile("\"thumbnail\":\"([^\"]*)\"");
-                Matcher um = u.matcher(html);
-                if (!um.find()) {
-                    throw new DownloadError("unknown timestamp vimeo respond");
-                }
-                icon = um.group(1);
-                icon = StringEscapeUtils.unescapeJava(icon);
-            }
+            VimeoData data = new Gson().fromJson(htmlConfig, VimeoData.class);
 
-            {
-                Pattern u = Pattern.compile("\"title\":\"([^\"]+)\"");
-                Matcher um = u.matcher(html);
-                if (!um.find()) {
-                    throw new DownloadError("unknown title vimeo respond");
-                }
-                String sTitle = um.group(1);
-                sTitle = StringEscapeUtils.unescapeHtml4(sTitle);
-                sTitle = StringEscapeUtils.unescapeJava(sTitle);
-                info.setTitle(sTitle);
-            }
+            String icon = data.video.thumbs.values().iterator().next();
 
-            String get = "http://player.vimeo.com/play_redirect?clip_id=%s&sig=%s&time=%s&quality=%s&codecs=H264,VP8,VP6&type=moogaloop_local&embed_location=&seek=0";
+            info.setTitle(data.video.title);
 
-            String hd = String.format(get, id, sig, exp, "hd");
-            String sd = String.format(get, id, sig, exp, "sd");
+            list.add(new VideoDownload(VideoQuality.p1080, new URL(data.request.files.h264.hd.url)));
 
-            // TODO fix resolution calculation
-            // https://vimeo.com/help/compression
-
-            // can be 1080p or 720p
-            if (qualities.contains("hd"))
-                sNextVideoURL.add(new VideoDownload(VideoQuality.p1080, new URL(hd)));
-            // can be 360p or 480p
-            if (qualities.contains("sd"))
-                sNextVideoURL.add(new VideoDownload(VideoQuality.p480, new URL(sd)));
+            list.add(new VideoDownload(VideoQuality.p480, new URL(data.request.files.h264.sd.url)));
 
             info.setIcon(new URL(icon));
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
-    }
 
-    @Override
-    public void extract(VideoInfo info, VideoInfoUser user, AtomicBoolean stop, Runnable notify) {
-        downloadone(info, stop, notify);
-        getVideo(info, user, sNextVideoURL);
+        return list;
     }
 
 }
