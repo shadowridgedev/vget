@@ -253,7 +253,7 @@ public class VGet {
     public void extract(AtomicBoolean stop, Runnable notify) {
         extract(new VideoInfoUser(), stop, notify);
     }
-    
+
     /**
      * extract video information, retry until success
      * 
@@ -338,7 +338,7 @@ public class VGet {
     public void download(final AtomicBoolean stop, final Runnable notify) {
         download(new VideoInfoUser(), stop, notify);
     }
-    
+
     public void download(VideoInfoUser user, final AtomicBoolean stop, final Runnable notify) {
         try {
             if (empty()) {

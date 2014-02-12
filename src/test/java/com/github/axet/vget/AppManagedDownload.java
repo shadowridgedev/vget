@@ -73,14 +73,17 @@ public class AppManagedDownload {
             // if youtube does not have video with requested quality, program
             // will raise en exception.
             VideoInfoUser user = new VideoInfoUser();
-            user.setUserQuality(VideoQuality.p480);
+            //user.setUserQuality(VideoQuality.p480);
 
             VGet v = new VGet(info, path);
 
             // [OPTIONAL] call v.extract() only if you d like to get video title
+            // or download url link
             // before start download. or just skip it.
             v.extract(user, stop, notify);
-            System.out.println(info.getTitle());
+
+            System.out.println("Title: " + info.getTitle());
+            System.out.println("Download URL: " + info.getInfo().getSource());
 
             v.download(user, stop, notify);
         } catch (RuntimeException e) {

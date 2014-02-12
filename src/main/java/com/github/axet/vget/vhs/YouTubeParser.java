@@ -27,6 +27,8 @@ import com.github.axet.wget.info.ex.DownloadError;
 
 public class YouTubeParser extends VGetParser {
 
+    final static String UTF8 = "UTF-8";
+
     public static class VideoUnavailablePlayer extends DownloadError {
         private static final long serialVersionUID = 10905065542230199L;
 
@@ -245,7 +247,7 @@ public class YouTubeParser extends VGetParser {
         Map<String, String> map = getQueryMap(qs);
 
         if (map.get("status").equals("fail")) {
-            String r = URLDecoder.decode(map.get("reason"), "UTF-8");
+            String r = URLDecoder.decode(map.get("reason"), UTF8);
             if (map.get("errorcode").equals("150"))
                 throw new EmbeddingDisabled("error code 150");
             if (map.get("errorcode").equals("100"))
@@ -255,18 +257,18 @@ public class YouTubeParser extends VGetParser {
             // throw new PrivateVideoException(r);
         }
 
-        info.setTitle(URLDecoder.decode(map.get("title"), "UTF-8"));
+        info.setTitle(URLDecoder.decode(map.get("title"), UTF8));
 
-        // String fmt_list = URLDecoder.decode(map.get("fmt_list"), "UTF-8");
+        // String fmt_list = URLDecoder.decode(map.get("fmt_list"), UTF8);
         // String[] fmts = fmt_list.split(",");
 
-        String url_encoded_fmt_stream_map = URLDecoder.decode(map.get("url_encoded_fmt_stream_map"), "UTF-8");
+        String url_encoded_fmt_stream_map = URLDecoder.decode(map.get("url_encoded_fmt_stream_map"), UTF8);
 
         extractUrlEncodedVideos(sNextVideoURL, url_encoded_fmt_stream_map);
 
         // 'iurlmaxresæ or 'iurlsd' or 'thumbnail_url'
         String icon = map.get("thumbnail_url");
-        icon = URLDecoder.decode(icon, "UTF-8");
+        icon = URLDecoder.decode(icon, UTF8);
         info.setIcon(new URL(icon));
 
         return sNextVideoURL;
@@ -292,7 +294,7 @@ public class YouTubeParser extends VGetParser {
         try {
             qs = qs.trim();
             List<NameValuePair> list;
-            list = URLEncodedUtils.parse(new URI(null, null, null, -1, null, qs, null), "UTF-8");
+            list = URLEncodedUtils.parse(new URI(null, null, null, -1, null, qs, null), UTF8);
             HashMap<String, String> map = new HashMap<String, String>();
             for (NameValuePair p : list) {
                 map.put(p.getName(), p.getValue());
@@ -356,7 +358,7 @@ public class YouTubeParser extends VGetParser {
 
                             url = "http" + url + "?" + sparams;
 
-                            url = URLDecoder.decode(url, "UTF-8");
+                            url = URLDecoder.decode(url, UTF8);
 
                             addVideo(sNextVideoURL, itag, url);
                         }
@@ -384,6 +386,8 @@ public class YouTubeParser extends VGetParser {
         for (String urlString : urlStrings) {
             urlString = StringEscapeUtils.unescapeJava(urlString);
 
+            String urlFull = URLDecoder.decode(urlString, UTF8);
+
             // universal request
             {
                 String url = null;
@@ -392,13 +396,13 @@ public class YouTubeParser extends VGetParser {
                     Matcher linkMatch = link.matcher(urlString);
                     if (linkMatch.find()) {
                         url = linkMatch.group(1);
-                        url = URLDecoder.decode(url, "UTF-8");
+                        url = URLDecoder.decode(url, UTF8);
                     }
                 }
                 String itag = null;
                 {
                     Pattern link = Pattern.compile("itag=(\\d+)");
-                    Matcher linkMatch = link.matcher(urlString);
+                    Matcher linkMatch = link.matcher(urlFull);
                     if (linkMatch.find()) {
                         itag = linkMatch.group(1);
                     }
@@ -406,7 +410,7 @@ public class YouTubeParser extends VGetParser {
                 String sig = null;
                 {
                     Pattern link = Pattern.compile("sig=([^&,]*)");
-                    Matcher linkMatch = link.matcher(urlString);
+                    Matcher linkMatch = link.matcher(urlFull);
                     if (linkMatch.find()) {
                         sig = linkMatch.group(1);
                     }
