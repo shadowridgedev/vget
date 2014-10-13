@@ -430,8 +430,6 @@ public class YouTubeParser extends VGetParser {
                         sig = linkMatch.group(1);
                     }
                 }
-                
-                System.err.println(urlString);
 
                 if (url != null && itag != null && sig != null) {
                     try {
