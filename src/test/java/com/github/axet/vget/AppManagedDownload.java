@@ -5,8 +5,12 @@ import java.net.URL;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.github.axet.vget.info.VGetParser;
 import com.github.axet.vget.info.VideoInfo;
-import com.github.axet.vget.info.VideoInfoUser;
+import com.github.axet.vget.info.VideoInfo.VideoQuality;
+import com.github.axet.vget.vhs.YouTubeMPGParser;
+import com.github.axet.vget.vhs.YouTubeParser;
+import com.github.axet.vget.vhs.YouTubeQParser;
 import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.DownloadInfo.Part;
 import com.github.axet.wget.info.DownloadInfo.Part.States;
@@ -71,8 +75,14 @@ public class AppManagedDownload {
             //
             // if youtube does not have video with requested quality, program
             // will raise en exception.
-            VideoInfoUser user = new VideoInfoUser();
-            // user.setUserQuality(VideoQuality.p480);
+            VGetParser user = null;
+
+            // create simple youtube request
+            //user = new YouTubeParser(info.getWeb());
+            // download maximum video quality
+            //user = new YouTubeQParser(info.getWeb(), VideoQuality.p480);
+            // download non webm only
+            //user = new YouTubeMPGParser(info.getWeb(), VideoQuality.p480);
 
             VGet v = new VGet(info, path);
 
