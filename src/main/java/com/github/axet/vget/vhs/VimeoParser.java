@@ -92,7 +92,7 @@ public class VimeoParser extends VGetParser {
     }
 
     @Override
-    public List<VideoDownload> extract(final VideoInfo info, final AtomicBoolean stop, final Runnable notify) {
+    public List<VideoDownload> extractLinks(final VideoInfo info, final AtomicBoolean stop, final Runnable notify) {
         List<VideoDownload> list = new ArrayList<VGetParser.VideoDownload>();
 
         try {

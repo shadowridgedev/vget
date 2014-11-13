@@ -9,9 +9,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import com.github.axet.vget.info.VGetParser;
 import com.github.axet.vget.info.VideoInfo;
 import com.github.axet.vget.info.VideoInfo.States;
-import com.github.axet.vget.info.VideoInfoUser;
 import com.github.axet.wget.Direct;
 import com.github.axet.wget.DirectMultipart;
 import com.github.axet.wget.DirectRange;
@@ -75,14 +75,14 @@ public class VGet {
     }
 
     public void download() {
-        download(new VideoInfoUser(), new AtomicBoolean(false), new Runnable() {
+        download(null, new AtomicBoolean(false), new Runnable() {
             @Override
             public void run() {
             }
         });
     }
 
-    public void download(VideoInfoUser user) {
+    public void download(VGetParser user) {
         download(user, new AtomicBoolean(false), new Runnable() {
             @Override
             public void run() {
@@ -136,7 +136,7 @@ public class VGet {
         return false;
     }
 
-    void retry(VideoInfoUser user, AtomicBoolean stop, Runnable notify, Throwable e) {
+    void retry(VGetParser user, AtomicBoolean stop, Runnable notify, Throwable e) {
         boolean retracted = false;
 
         while (!retracted) {
@@ -272,7 +272,7 @@ public class VGet {
     }
 
     public void extract(AtomicBoolean stop, Runnable notify) {
-        extract(new VideoInfoUser(), stop, notify);
+        extract(null, stop, notify);
     }
 
     /**
@@ -281,7 +281,7 @@ public class VGet {
      * @param stop
      * @param notify
      */
-    public void extract(VideoInfoUser user, AtomicBoolean stop, Runnable notify) {
+    public void extract(VGetParser user, AtomicBoolean stop, Runnable notify) {
         while (!done(stop)) {
             try {
                 if (info.empty()) {
@@ -317,8 +317,7 @@ public class VGet {
     }
 
     /**
-     * check if all parts has the same filenotfound exception. if so throw
-     * DownloadError.FilenotFoundexcepiton
+     * check if all parts has the same filenotfound exception. if so throw DownloadError.FilenotFoundexcepiton
      * 
      * @param e
      */
@@ -357,10 +356,10 @@ public class VGet {
     }
 
     public void download(final AtomicBoolean stop, final Runnable notify) {
-        download(new VideoInfoUser(), stop, notify);
+        download(null, stop, notify);
     }
 
-    public void download(VideoInfoUser user, final AtomicBoolean stop, final Runnable notify) {
+    public void download(VGetParser user, final AtomicBoolean stop, final Runnable notify) {
         if (targetFile == null && targetForce == null && targetDir == null) {
             throw new RuntimeException("Set download file or directory first");
         }

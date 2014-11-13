@@ -1,18 +1,14 @@
 package com.github.axet.vget.info;
 
 import java.net.URL;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.github.axet.vget.info.VGetParser.VideoContentFirst;
 import com.github.axet.vget.info.VGetParser.VideoDownload;
 import com.github.axet.vget.vhs.VimeoParser;
 import com.github.axet.vget.vhs.YouTubeParser;
 import com.github.axet.wget.info.DownloadInfo;
-import com.github.axet.wget.info.ex.DownloadError;
 import com.github.axet.wget.info.ex.DownloadInterruptedError;
-import com.github.axet.wget.info.ex.DownloadRetry;
 
 public class VideoInfo {
 
@@ -27,8 +23,6 @@ public class VideoInfo {
 
     // user friendly url (not direct video stream url)
     private URL web;
-
-    private List<VideoDownload> videoDownloads;
 
     private VideoQuality vq;
     private DownloadInfo info;
@@ -122,21 +116,22 @@ public class VideoInfo {
         this.web = source;
     }
 
-    public void extract(VideoInfoUser user, AtomicBoolean stop, Runnable notify) {
-        VGetParser ei = null;
+    public void extract(VGetParser user, AtomicBoolean stop, Runnable notify) {
+        VGetParser ei = user;
 
-        if (YouTubeParser.probe(web))
+        if (ei == null && YouTubeParser.probe(web))
             ei = new YouTubeParser(web);
 
-        if (VimeoParser.probe(web))
+        if (ei == null && VimeoParser.probe(web))
             ei = new VimeoParser(web);
 
         if (ei == null)
             throw new RuntimeException("unsupported web site");
 
         try {
-            videoDownloads = ei.extract(this, stop, notify);
-            getVideo(this, user, videoDownloads);
+            DownloadInfo dinfo = ei.extract(this, stop, notify);
+
+            this.setInfo(dinfo);
 
             info.setReferer(web);
 
@@ -150,46 +145,6 @@ public class VideoInfo {
 
             throw e;
         }
-    }
-
-    public void getVideo(VideoInfo vvi, VideoInfoUser user, List<VideoDownload> sNextVideoURL) {
-        if (sNextVideoURL.size() == 0) {
-            // rare error:
-            //
-            // The live recording you're trying to play is still being processed
-            // and will be available soon. Sorry, please try again later.
-            //
-            // retry. since youtube may already rendrered propertly quality.
-            throw new DownloadRetry("empty video download list," + " wait until youtube will process the video");
-        }
-
-        Collections.sort(sNextVideoURL, new VideoContentFirst());
-
-        for (int i = 0; i < sNextVideoURL.size(); i++) {
-            VideoDownload v = sNextVideoURL.get(i);
-
-            boolean found = true;
-
-            if (user.getUserQuality() != null)
-                found &= user.getUserQuality().equals(v.vq);
-
-            if (found) {
-                vvi.setVideoQuality(v.vq);
-                DownloadInfo info = new DownloadInfo(v.url);
-                vvi.setInfo(info);
-                return;
-            }
-        }
-
-        // throw download stop if user choice not maximum quality and we have no
-        // video rendered by youtube
-
-        // customize exception
-        if (user.getUserQuality() != null)
-            throw new DownloadError("no video user quality found");
-
-        throw new DownloadError("no video with required quality found,"
-                + " increace VideoInfo.setVq to the maximum and retry download");
     }
 
     public States getState() {
@@ -232,10 +187,6 @@ public class VideoInfo {
 
     public void setIcon(URL icon) {
         this.icon = icon;
-    }
-
-    public List<VideoDownload> getVideoDownloads() {
-        return videoDownloads;
     }
 
 }
