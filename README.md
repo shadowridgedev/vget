@@ -123,8 +123,14 @@ Here are a two kind of exceptions.
                 //
                 // if youtube does not have video with requested quality, program
                 // will raise an exception.
-                VideoInfoUser user = new VideoInfoUser();
-                user.setUserQuality(VideoQuality.p480);
+                VGetParser user = null;
+    
+                // create simple youtube request
+                //user = new YouTubeParser(info.getWeb());
+                // download maximum video quality
+                //user = new YouTubeQParser(info.getWeb(), VideoQuality.p480);
+                // download non webm only
+                //user = new YouTubeMPGParser(info.getWeb(), VideoQuality.p480);
     
                 VGet v = new VGet(info, path);
     
@@ -156,5 +162,5 @@ Here are a two kind of exceptions.
     <dependency>
       <groupId>com.github.axet</groupId>
       <artifactId>vget</artifactId>
-      <version>1.1.3</version>
+      <version>1.1.7</version>
     </dependency>
