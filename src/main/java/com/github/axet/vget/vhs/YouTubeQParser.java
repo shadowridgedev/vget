@@ -1,43 +1,25 @@
-package com.github.axet.vget.info;
+package com.github.axet.vget.vhs;
 
 import java.net.URL;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.github.axet.vget.info.VideoInfo;
 import com.github.axet.vget.info.VideoInfo.VideoQuality;
 import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.ex.DownloadError;
 import com.github.axet.wget.info.ex.DownloadRetry;
 
-public abstract class VGetParser {
+public class YouTubeQParser extends YouTubeParser {
 
-    static public class VideoDownload {
-        public VideoQuality vq;
-        public URL url;
+    VideoQuality q;
 
-        public VideoDownload(VideoQuality vq, URL u) {
-            this.vq = vq;
-            this.url = u;
-        }
+    public YouTubeQParser(URL input, VideoQuality q) {
+        super(input);
+
+        this.q = q;
     }
-
-    static public class VideoContentFirst implements Comparator<VideoDownload> {
-
-        @Override
-        public int compare(VideoDownload o1, VideoDownload o2) {
-            Integer i1 = o1.vq.ordinal();
-            Integer i2 = o2.vq.ordinal();
-            Integer ic = i1.compareTo(i2);
-
-            return ic;
-        }
-
-    }
-
-    public abstract List<VideoDownload> extractLinks(final VideoInfo info, final AtomicBoolean stop,
-            final Runnable notify);
 
     public DownloadInfo extract(final VideoInfo vinfo, final AtomicBoolean stop, final Runnable notify) {
         List<VideoDownload> sNextVideoURL = extractLinks(vinfo, stop, notify);
@@ -59,6 +41,8 @@ public abstract class VGetParser {
 
             boolean found = true;
 
+            found &= q.equals(v.vq);
+
             if (found) {
                 vinfo.setVideoQuality(v.vq);
                 DownloadInfo info = new DownloadInfo(v.url);
@@ -70,7 +54,7 @@ public abstract class VGetParser {
         // throw download stop if user choice not maximum quality and we have no
         // video rendered by youtube
 
-        throw new DownloadError("no video with required quality found,"
-                + " increace VideoInfo.setVq to the maximum and retry download");
+        throw new DownloadError("no video user quality found");
     }
+
 }

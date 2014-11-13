@@ -154,7 +154,8 @@ public class YouTubeParser extends VGetParser {
         return url.toString().contains("youtube.com");
     }
 
-    public List<VideoDownload> extract(final VideoInfo info, final AtomicBoolean stop, final Runnable notify) {
+    @Override
+    public List<VideoDownload> extractLinks(final VideoInfo info, final AtomicBoolean stop, final Runnable notify) {
         try {
             try {
                 return extractEmbedded(info, stop, notify);
@@ -225,28 +226,28 @@ public class YouTubeParser extends VGetParser {
     static final Map<Integer, VideoQuality> itagMap = new HashMap<Integer, VideoInfo.VideoQuality>() {
         private static final long serialVersionUID = -6925194111122038477L;
         {
-            put(120, VideoQuality.p720);
-            put(102, VideoQuality.p720);
-            put(101, VideoQuality.p360);
-            put(100, VideoQuality.p360);
-            put(85, VideoQuality.p520);
-            put(84, VideoQuality.p720);
-            put(83, VideoQuality.p240);
-            put(82, VideoQuality.p360);
-            put(46, VideoQuality.p1080);
-            put(45, VideoQuality.p720);
-            put(44, VideoQuality.p480);
-            put(43, VideoQuality.p360);
-            put(38, VideoQuality.p3072);
-            put(37, VideoQuality.p1080);
-            put(36, VideoQuality.p240);
-            put(35, VideoQuality.p480);
-            put(34, VideoQuality.p360);
-            put(22, VideoQuality.p720);
-            put(18, VideoQuality.p360);
-            put(17, VideoQuality.p144);
-            put(6, VideoQuality.p270);
-            put(5, VideoQuality.p240);
+            put(120, VideoQuality.p720); // flv
+            put(102, VideoQuality.p720); // webm
+            put(101, VideoQuality.p360); // webm
+            put(100, VideoQuality.p360); // webm
+            put(85, VideoQuality.p520); // mp4
+            put(84, VideoQuality.p720); // mp4
+            put(83, VideoQuality.p240); // mp4
+            put(82, VideoQuality.p360); // mp4
+            put(46, VideoQuality.p1080); // webm
+            put(45, VideoQuality.p720); // webm
+            put(44, VideoQuality.p480); // webm
+            put(43, VideoQuality.p360); // webm
+            put(38, VideoQuality.p3072); // mp4
+            put(37, VideoQuality.p1080); // mp4
+            put(36, VideoQuality.p240); // 3gp
+            put(35, VideoQuality.p480); // flv
+            put(34, VideoQuality.p360); // flv
+            put(22, VideoQuality.p720); // mp4
+            put(18, VideoQuality.p360); // mp4
+            put(17, VideoQuality.p144); // 3gp
+            put(6, VideoQuality.p270); // flv
+            put(5, VideoQuality.p240); // flv
         }
     };
 
