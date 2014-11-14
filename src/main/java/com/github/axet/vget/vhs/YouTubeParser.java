@@ -144,10 +144,7 @@ public class YouTubeParser extends VGetParser {
         }
     }
 
-    URL source;
-
-    public YouTubeParser(URL input) {
-        this.source = input;
+    public YouTubeParser() {
     }
 
     public static boolean probe(URL url) {
@@ -281,7 +278,7 @@ public class YouTubeParser extends VGetParser {
             throws Exception {
         List<VideoDownload> sNextVideoURL = new ArrayList<VideoDownload>();
 
-        String id = extractId(source);
+        String id = extractId(info.getWeb());
         if (id == null) {
             throw new RuntimeException("unknown url");
         }

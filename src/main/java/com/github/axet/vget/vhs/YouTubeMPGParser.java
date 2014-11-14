@@ -3,12 +3,9 @@ package com.github.axet.vget.vhs;
 import java.net.URL;
 import java.util.List;
 
-import com.github.axet.vget.info.VideoInfo.VideoQuality;
-
 public class YouTubeMPGParser extends YouTubeParser {
 
-    public YouTubeMPGParser(URL input, VideoQuality q) {
-        super(input);
+    public YouTubeMPGParser() {
     }
 
     void addVideo(List<VideoDownload> sNextVideoURL, String itag, URL url) {

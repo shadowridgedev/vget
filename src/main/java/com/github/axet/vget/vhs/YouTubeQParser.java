@@ -15,9 +15,7 @@ public class YouTubeQParser extends YouTubeParser {
 
     VideoQuality q;
 
-    public YouTubeQParser(URL input, VideoQuality q) {
-        super(input);
-
+    public YouTubeQParser(VideoQuality q) {
         this.q = q;
     }
 

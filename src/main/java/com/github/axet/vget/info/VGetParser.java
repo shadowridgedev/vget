@@ -36,6 +36,14 @@ public abstract class VGetParser {
 
     }
 
+    public List<VideoDownload> extractLinks(final VideoInfo info) {
+        return extractLinks(info, new AtomicBoolean(), new Runnable() {
+            @Override
+            public void run() {
+            }
+        });
+    }
+
     public abstract List<VideoDownload> extractLinks(final VideoInfo info, final AtomicBoolean stop,
             final Runnable notify);
 
