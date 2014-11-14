@@ -9,8 +9,6 @@ import com.github.axet.vget.info.VGetParser;
 import com.github.axet.vget.info.VideoInfo;
 import com.github.axet.vget.info.VideoInfo.VideoQuality;
 import com.github.axet.vget.vhs.YouTubeMPGParser;
-import com.github.axet.vget.vhs.YouTubeParser;
-import com.github.axet.vget.vhs.YouTubeQParser;
 import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.DownloadInfo.Part;
 import com.github.axet.wget.info.DownloadInfo.Part.States;
@@ -78,11 +76,11 @@ public class AppManagedDownload {
             VGetParser user = null;
 
             // create simple youtube request
-            //user = new YouTubeParser(info.getWeb());
+            // user = new YouTubeParser();
             // download maximum video quality
-            //user = new YouTubeQParser(info.getWeb(), VideoQuality.p480);
+            // user = new YouTubeQParser(VideoQuality.p480);
             // download non webm only
-            //user = new YouTubeMPGParser(info.getWeb(), VideoQuality.p480);
+            // user = new YouTubeMPGParser();
 
             VGet v = new VGet(info, path);
 
