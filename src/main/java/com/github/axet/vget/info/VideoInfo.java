@@ -120,10 +120,10 @@ public class VideoInfo {
         VGetParser ei = user;
 
         if (ei == null && YouTubeParser.probe(web))
-            ei = new YouTubeParser(web);
+            ei = new YouTubeParser();
 
         if (ei == null && VimeoParser.probe(web))
-            ei = new VimeoParser(web);
+            ei = new VimeoParser();
 
         if (ei == null)
             throw new RuntimeException("unsupported web site");
