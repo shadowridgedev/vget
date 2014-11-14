@@ -95,7 +95,7 @@ public class AppManagedDownload {
             // create proper videoinfo to keep specific video information
             info = user.info(web);
 
-            VGet v = new VGet(web, path);
+            VGet v = new VGet(info, path);
 
             // [OPTIONAL] call v.extract() only if you d like to get video title
             // or download url link
