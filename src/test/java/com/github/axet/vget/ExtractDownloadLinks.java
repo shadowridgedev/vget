@@ -2,11 +2,10 @@ package com.github.axet.vget;
 
 import java.net.URL;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.github.axet.vget.info.VGetParser.VideoDownload;
-import com.github.axet.vget.info.VideoInfo;
 import com.github.axet.vget.vhs.YouTubeParser;
+import com.github.axet.vget.vhs.YouTubeParser.VideoDownload;
+import com.github.axet.vget.vhs.YoutubeInfo;
 
 public class ExtractDownloadLinks {
 
@@ -15,7 +14,7 @@ public class ExtractDownloadLinks {
             // ex: http://www.youtube.com/watch?v=Nj6PFaDmp6c
             String url = args[0];
 
-            VideoInfo info = new VideoInfo(new URL(url));
+            YoutubeInfo info = new YoutubeInfo(new URL(url));
 
             YouTubeParser parser = new YouTubeParser();
 

@@ -3,6 +3,8 @@ package com.github.axet.vget.vhs;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -14,13 +16,38 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import com.github.axet.vget.info.VGetParser;
 import com.github.axet.vget.info.VideoInfo;
 import com.github.axet.vget.info.VideoInfo.States;
-import com.github.axet.vget.info.VideoInfo.VideoQuality;
+import com.github.axet.vget.vhs.VimeoInfo.VimeoQuality;
 import com.github.axet.wget.WGet;
 import com.github.axet.wget.WGet.HtmlLoader;
+import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.ex.DownloadError;
+import com.github.axet.wget.info.ex.DownloadRetry;
 import com.google.gson.Gson;
 
 public class VimeoParser extends VGetParser {
+
+    static public class VideoDownload {
+        public VimeoQuality vq;
+        public URL url;
+
+        public VideoDownload(VimeoQuality vq, URL u) {
+            this.vq = vq;
+            this.url = u;
+        }
+    }
+
+    static public class VideoContentFirst implements Comparator<VideoDownload> {
+
+        @Override
+        public int compare(VideoDownload o1, VideoDownload o2) {
+            Integer i1 = o1.vq.ordinal();
+            Integer i2 = o2.vq.ordinal();
+            Integer ic = i1.compareTo(i2);
+
+            return ic;
+        }
+
+    }
 
     public static class VimeoData {
         public VimeoRequest request;
@@ -88,9 +115,8 @@ public class VimeoParser extends VGetParser {
         return null;
     }
 
-    @Override
     public List<VideoDownload> extractLinks(final VideoInfo info, final AtomicBoolean stop, final Runnable notify) {
-        List<VideoDownload> list = new ArrayList<VGetParser.VideoDownload>();
+        List<VideoDownload> list = new ArrayList<VideoDownload>();
 
         try {
             String id;
@@ -163,9 +189,11 @@ public class VimeoParser extends VGetParser {
 
             info.setTitle(data.video.title);
 
-            list.add(new VideoDownload(VideoQuality.p1080, new URL(data.request.files.h264.hd.url)));
+            if (data.request.files.h264.hd != null)
+                list.add(new VideoDownload(VimeoQuality.pHi, new URL(data.request.files.h264.hd.url)));
 
-            list.add(new VideoDownload(VideoQuality.p480, new URL(data.request.files.h264.sd.url)));
+            if (data.request.files.h264.sd != null)
+                list.add(new VideoDownload(VimeoQuality.pLow, new URL(data.request.files.h264.sd.url)));
 
             info.setIcon(new URL(icon));
         } catch (MalformedURLException e) {
@@ -173,6 +201,33 @@ public class VimeoParser extends VGetParser {
         }
 
         return list;
+    }
+
+    @Override
+    public DownloadInfo extract(VideoInfo vinfo, AtomicBoolean stop, Runnable notify) {
+        List<VideoDownload> sNextVideoURL = extractLinks(vinfo, stop, notify);
+
+        Collections.sort(sNextVideoURL, new VideoContentFirst());
+
+        for (int i = 0; i < sNextVideoURL.size();) {
+            VideoDownload v = sNextVideoURL.get(i);
+
+            VimeoInfo yinfo = (VimeoInfo) vinfo;
+            yinfo.setVideoQuality(v.vq);
+            DownloadInfo info = new DownloadInfo(v.url);
+            vinfo.setInfo(info);
+            return info;
+        }
+
+        // throw download stop if user choice not maximum quality and we have no
+        // video rendered by
+
+        throw new DownloadError("no video with required quality found");
+    }
+
+    @Override
+    public VideoInfo info(URL web) {
+        return new VimeoInfo(web);
     }
 
 }

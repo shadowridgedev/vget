@@ -1,21 +1,20 @@
 package com.github.axet.vget.vhs;
 
-import java.net.URL;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.github.axet.vget.info.VideoInfo;
-import com.github.axet.vget.info.VideoInfo.VideoQuality;
+import com.github.axet.vget.vhs.YoutubeInfo.YoutubeQuality;
 import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.ex.DownloadError;
 import com.github.axet.wget.info.ex.DownloadRetry;
 
 public class YouTubeQParser extends YouTubeParser {
 
-    VideoQuality q;
+    YoutubeQuality q;
 
-    public YouTubeQParser(VideoQuality q) {
+    public YouTubeQParser(YoutubeQuality q) {
         this.q = q;
     }
 
@@ -42,7 +41,8 @@ public class YouTubeQParser extends YouTubeParser {
             found &= q.equals(v.vq);
 
             if (found) {
-                vinfo.setVideoQuality(v.vq);
+                YoutubeInfo yinfo = (YoutubeInfo) vinfo;
+                yinfo.setVideoQuality(v.vq);
                 DownloadInfo info = new DownloadInfo(v.url);
                 vinfo.setInfo(info);
                 return info;

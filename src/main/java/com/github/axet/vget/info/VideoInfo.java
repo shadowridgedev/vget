@@ -1,21 +1,14 @@
 package com.github.axet.vget.info;
 
 import java.net.URL;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.github.axet.vget.info.VGetParser.VideoDownload;
 import com.github.axet.vget.vhs.VimeoParser;
 import com.github.axet.vget.vhs.YouTubeParser;
 import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.ex.DownloadInterruptedError;
 
 public class VideoInfo {
-
-    // keep it in order hi->lo
-    public enum VideoQuality {
-        p3072, p2304, p1080, p720, p520, p480, p360, p270, p240, p224, p144
-    }
 
     public enum States {
         QUEUE, EXTRACTING, EXTRACTING_DONE, DOWNLOADING, RETRYING, DONE, ERROR, STOP
@@ -24,7 +17,6 @@ public class VideoInfo {
     // user friendly url (not direct video stream url)
     private URL web;
 
-    private VideoQuality vq;
     private DownloadInfo info;
     private String title;
     private URL icon;
@@ -67,7 +59,6 @@ public class VideoInfo {
         setState(States.QUEUE);
 
         info = null;
-        vq = null;
         title = null;
         icon = null;
         exception = null;
@@ -90,61 +81,12 @@ public class VideoInfo {
         this.info = info;
     }
 
-    /**
-     * get current video quality. holds actual videoquality ready for download
-     * 
-     * @return videoquality of requested URL
-     */
-    public VideoQuality getVideoQuality() {
-        return vq;
-    }
-
-    /**
-     * 
-     * @param vq
-     *            video quality
-     */
-    public void setVideoQuality(VideoQuality vq) {
-        this.vq = vq;
-    }
-
     public URL getWeb() {
         return web;
     }
 
     public void setWeb(URL source) {
         this.web = source;
-    }
-
-    public void extract(VGetParser user, AtomicBoolean stop, Runnable notify) {
-        VGetParser ei = user;
-
-        if (ei == null && YouTubeParser.probe(web))
-            ei = new YouTubeParser();
-
-        if (ei == null && VimeoParser.probe(web))
-            ei = new VimeoParser();
-
-        if (ei == null)
-            throw new RuntimeException("unsupported web site");
-
-        try {
-            DownloadInfo dinfo = ei.extract(this, stop, notify);
-
-            this.setInfo(dinfo);
-
-            info.setReferer(web);
-
-            info.extract(stop, notify);
-        } catch (DownloadInterruptedError e) {
-            setState(States.STOP, e);
-
-            throw e;
-        } catch (RuntimeException e) {
-            setState(States.ERROR, e);
-
-            throw e;
-        }
     }
 
     public States getState() {

@@ -12,6 +12,8 @@ import org.apache.commons.lang3.StringUtils;
 import com.github.axet.vget.info.VGetParser;
 import com.github.axet.vget.info.VideoInfo;
 import com.github.axet.vget.info.VideoInfo.States;
+import com.github.axet.vget.vhs.VimeoParser;
+import com.github.axet.vget.vhs.YouTubeParser;
 import com.github.axet.wget.Direct;
 import com.github.axet.wget.DirectMultipart;
 import com.github.axet.wget.DirectRange;
@@ -41,11 +43,11 @@ public class VGet {
      * @param source
      */
     public VGet(URL source) {
-        this(new VideoInfo(source), null);
+        this(source, null);
     }
 
     public VGet(URL source, File targetDir) {
-        this(new VideoInfo(source), targetDir);
+        this(parser(null, source).info(source), targetDir);
     }
 
     public VGet(VideoInfo info, File targetDir) {
@@ -163,7 +165,8 @@ public class VGet {
                 // download
 
                 DownloadInfo infoOld = info.getInfo();
-                info.extract(user, stop, notify);
+                user = parser(user, info.getWeb());
+                user.info(info, stop, notify);
                 DownloadInfo infoNew = info.getInfo();
 
                 if (infoOld != null && infoOld.resume(infoNew)) {
@@ -286,7 +289,8 @@ public class VGet {
             try {
                 if (info.empty()) {
                     info.setState(States.EXTRACTING);
-                    info.extract(user, stop, notify);
+                    user = parser(user, info.getWeb());
+                    user.info(info, stop, notify);
                     info.setState(States.EXTRACTING_DONE);
                     notify.run();
                 }
@@ -448,4 +452,24 @@ public class VGet {
             throw e;
         }
     }
+
+    public static VGetParser parser(URL web) {
+        return parser(null, web);
+    }
+
+    public static VGetParser parser(VGetParser user, URL web) {
+        VGetParser ei = user;
+
+        if (ei == null && YouTubeParser.probe(web))
+            ei = new YouTubeParser();
+
+        if (ei == null && VimeoParser.probe(web))
+            ei = new VimeoParser();
+
+        if (ei == null)
+            throw new RuntimeException("unsupported web site");
+
+        return ei;
+    }
+
 }
