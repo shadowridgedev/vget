@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.github.axet.vget.info.VideoInfo;
+import com.github.axet.vget.vhs.YoutubeInfo.StreamCombined;
 import com.github.axet.vget.vhs.YoutubeInfo.YoutubeQuality;
 import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.ex.DownloadError;
@@ -38,11 +39,13 @@ public class YouTubeQParser extends YouTubeParser {
 
             boolean found = true;
 
-            found &= q.equals(v.vq);
+            StreamCombined vq =  (StreamCombined) v.stream;
+            
+            found &= q.equals(vq.vq);
 
             if (found) {
                 YoutubeInfo yinfo = (YoutubeInfo) vinfo;
-                yinfo.setVideoQuality(v.vq);
+                yinfo.setStreamInfo(vq);
                 DownloadInfo info = new DownloadInfo(v.url);
                 vinfo.setInfo(info);
                 return info;

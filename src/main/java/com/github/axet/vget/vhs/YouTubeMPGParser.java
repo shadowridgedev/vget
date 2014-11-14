@@ -8,7 +8,7 @@ public class YouTubeMPGParser extends YouTubeParser {
     public YouTubeMPGParser() {
     }
 
-    void addVideo(List<VideoDownload> sNextVideoURL, String itag, URL url) {
+    void filter(List<VideoDownload> sNextVideoURL, String itag, URL url) {
         Integer i = Integer.parseInt(itag);
 
         // get rid of webm
@@ -23,7 +23,7 @@ public class YouTubeMPGParser extends YouTubeParser {
             return;
         }
 
-        super.addVideo(sNextVideoURL, itag, url);
+        super.filter(sNextVideoURL, itag, url);
     }
 
 }

@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.github.axet.vget.vhs.YouTubeParser;
 import com.github.axet.vget.vhs.YouTubeParser.VideoDownload;
+import com.github.axet.vget.vhs.YoutubeInfo.StreamVideo;
 import com.github.axet.vget.vhs.YoutubeInfo;
 
 public class ExtractDownloadLinks {
@@ -21,7 +22,7 @@ public class ExtractDownloadLinks {
             List<VideoDownload> list = parser.extractLinks(info);
 
             for (VideoDownload d : list) {
-                System.out.println(d.vq + " " + d.url);
+                System.out.println(d.stream + " " + d.url);
             }
         } catch (Exception e) {
             e.printStackTrace();
