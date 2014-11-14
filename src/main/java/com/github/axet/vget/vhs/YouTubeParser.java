@@ -6,6 +6,8 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,11 +23,36 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import com.github.axet.vget.info.VGetParser;
 import com.github.axet.vget.info.VideoInfo;
 import com.github.axet.vget.info.VideoInfo.States;
-import com.github.axet.vget.info.VideoInfo.VideoQuality;
+import com.github.axet.vget.vhs.YoutubeInfo.YoutubeQuality;
 import com.github.axet.wget.WGet;
+import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.ex.DownloadError;
+import com.github.axet.wget.info.ex.DownloadRetry;
 
 public class YouTubeParser extends VGetParser {
+
+    static public class VideoDownload {
+        public YoutubeQuality vq;
+        public URL url;
+
+        public VideoDownload(YoutubeQuality vq, URL u) {
+            this.vq = vq;
+            this.url = u;
+        }
+    }
+
+    static public class VideoContentFirst implements Comparator<VideoDownload> {
+
+        @Override
+        public int compare(VideoDownload o1, VideoDownload o2) {
+            Integer i1 = o1.vq.ordinal();
+            Integer i2 = o2.vq.ordinal();
+            Integer ic = i1.compareTo(i2);
+
+            return ic;
+        }
+
+    }
 
     final static String UTF8 = "UTF-8";
 
@@ -151,7 +178,14 @@ public class YouTubeParser extends VGetParser {
         return url.toString().contains("youtube.com");
     }
 
-    @Override
+    public List<VideoDownload> extractLinks(final VideoInfo info) {
+        return extractLinks(info, new AtomicBoolean(), new Runnable() {
+            @Override
+            public void run() {
+            }
+        });
+    }
+
     public List<VideoDownload> extractLinks(final VideoInfo info, final AtomicBoolean stop, final Runnable notify) {
         try {
             try {
@@ -213,38 +247,38 @@ public class YouTubeParser extends VGetParser {
      */
     void addVideo(List<VideoDownload> sNextVideoURL, String itag, URL url) {
         Integer i = Integer.decode(itag);
-        VideoQuality vd = itagMap.get(i);
+        YoutubeQuality vd = itagMap.get(i);
 
         sNextVideoURL.add(new VideoDownload(vd, url));
     }
 
     // http://en.wikipedia.org/wiki/YouTube#Quality_and_codecs
 
-    static final Map<Integer, VideoQuality> itagMap = new HashMap<Integer, VideoInfo.VideoQuality>() {
+    static final Map<Integer, YoutubeQuality> itagMap = new HashMap<Integer, YoutubeQuality>() {
         private static final long serialVersionUID = -6925194111122038477L;
         {
-            put(120, VideoQuality.p720); // flv
-            put(102, VideoQuality.p720); // webm
-            put(101, VideoQuality.p360); // webm
-            put(100, VideoQuality.p360); // webm
-            put(85, VideoQuality.p520); // mp4
-            put(84, VideoQuality.p720); // mp4
-            put(83, VideoQuality.p240); // mp4
-            put(82, VideoQuality.p360); // mp4
-            put(46, VideoQuality.p1080); // webm
-            put(45, VideoQuality.p720); // webm
-            put(44, VideoQuality.p480); // webm
-            put(43, VideoQuality.p360); // webm
-            put(38, VideoQuality.p3072); // mp4
-            put(37, VideoQuality.p1080); // mp4
-            put(36, VideoQuality.p240); // 3gp
-            put(35, VideoQuality.p480); // flv
-            put(34, VideoQuality.p360); // flv
-            put(22, VideoQuality.p720); // mp4
-            put(18, VideoQuality.p360); // mp4
-            put(17, VideoQuality.p144); // 3gp
-            put(6, VideoQuality.p270); // flv
-            put(5, VideoQuality.p240); // flv
+            put(120, YoutubeQuality.p720); // flv
+            put(102, YoutubeQuality.p720); // webm
+            put(101, YoutubeQuality.p360); // webm
+            put(100, YoutubeQuality.p360); // webm
+            put(85, YoutubeQuality.p520); // mp4
+            put(84, YoutubeQuality.p720); // mp4
+            put(83, YoutubeQuality.p240); // mp4
+            put(82, YoutubeQuality.p360); // mp4
+            put(46, YoutubeQuality.p1080); // webm
+            put(45, YoutubeQuality.p720); // webm
+            put(44, YoutubeQuality.p480); // webm
+            put(43, YoutubeQuality.p360); // webm
+            put(38, YoutubeQuality.p3072); // mp4
+            put(37, YoutubeQuality.p1080); // mp4
+            put(36, YoutubeQuality.p240); // 3gp
+            put(35, YoutubeQuality.p480); // flv
+            put(34, YoutubeQuality.p360); // flv
+            put(22, YoutubeQuality.p720); // mp4
+            put(18, YoutubeQuality.p360); // mp4
+            put(17, YoutubeQuality.p144); // 3gp
+            put(6, YoutubeQuality.p270); // flv
+            put(5, YoutubeQuality.p240); // flv
         }
     };
 
@@ -515,5 +549,43 @@ public class YouTubeParser extends VGetParser {
                 }
             }
         }
+    }
+
+    @Override
+    public DownloadInfo extract(VideoInfo vinfo, AtomicBoolean stop, Runnable notify) {
+        List<VideoDownload> sNextVideoURL = extractLinks(vinfo, stop, notify);
+
+        if (sNextVideoURL.size() == 0) {
+            // rare error:
+            //
+            // The live recording you're trying to play is still being processed
+            // and will be available soon. Sorry, please try again later.
+            //
+            // retry. since youtube may already rendrered propertly quality.
+            throw new DownloadRetry("empty video download list," + " wait until youtube will process the video");
+        }
+
+        Collections.sort(sNextVideoURL, new VideoContentFirst());
+
+        for (int i = 0; i < sNextVideoURL.size();) {
+            VideoDownload v = sNextVideoURL.get(i);
+
+            YoutubeInfo yinfo = (YoutubeInfo) vinfo;
+            yinfo.setVideoQuality(v.vq);
+            DownloadInfo info = new DownloadInfo(v.url);
+            vinfo.setInfo(info);
+            return info;
+        }
+
+        // throw download stop if user choice not maximum quality and we have no
+        // video rendered by youtube
+
+        throw new DownloadError("no video with required quality found,"
+                + " increace VideoInfo.setVq to the maximum and retry download");
+    }
+
+    @Override
+    public VideoInfo info(URL web) {
+        return new YoutubeInfo(web);
     }
 }
