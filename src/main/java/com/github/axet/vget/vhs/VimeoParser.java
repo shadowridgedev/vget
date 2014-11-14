@@ -22,8 +22,6 @@ import com.google.gson.Gson;
 
 public class VimeoParser extends VGetParser {
 
-    URL source;
-
     public static class VimeoData {
         public VimeoRequest request;
         public VimeoVideo video;
@@ -61,8 +59,7 @@ public class VimeoParser extends VGetParser {
         public int bitrate;
     }
 
-    public VimeoParser(URL input) {
-        this.source = input;
+    public VimeoParser() {
     }
 
     public static boolean probe(URL url) {

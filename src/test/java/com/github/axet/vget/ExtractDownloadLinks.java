@@ -17,13 +17,9 @@ public class ExtractDownloadLinks {
 
             VideoInfo info = new VideoInfo(new URL(url));
 
-            YouTubeParser parser = new YouTubeParser(info.getWeb());
+            YouTubeParser parser = new YouTubeParser();
 
-            List<VideoDownload> list = parser.extractLinks(info, new AtomicBoolean(), new Runnable() {
-                @Override
-                public void run() {
-                }
-            });
+            List<VideoDownload> list = parser.extractLinks(info);
 
             for (VideoDownload d : list) {
                 System.out.println(d.vq + " " + d.url);
