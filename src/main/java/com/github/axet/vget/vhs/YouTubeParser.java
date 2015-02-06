@@ -481,7 +481,7 @@ public class YouTubeParser extends VGetParser {
 
         // combined streams
         {
-            Pattern urlencod = Pattern.compile("\"url_encoded_fmt_stream_map\": \"([^\"]*)\"");
+            Pattern urlencod = Pattern.compile("\"url_encoded_fmt_stream_map\":\"([^\"]*)\"");
             Matcher urlencodMatch = urlencod.matcher(html);
             if (urlencodMatch.find()) {
                 String url_encoded_fmt_stream_map;
