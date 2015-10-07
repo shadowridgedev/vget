@@ -6,7 +6,7 @@ Support for Youtube, Vimeo. Multithread downloads. Based on multithread download
 
 Pure java!
 
-How this library works: [YouTube](docs/YouTube.md)
+How this library works: [YouTube.md](docs/YouTube.md)
 
 ## Exceptions
 
