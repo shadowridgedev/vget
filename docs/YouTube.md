@@ -35,3 +35,13 @@ Main extract function is  extract() it call for booth extract using embedded url
 It is simple. We ask YouTube to generate our html in two different ways. Somethims embedded links allows you to watch country restreicted videos, or age restricted vidoes. So it is good to have booth calls.
 
 Then we parse html using extractHtmlInfo() and inside it extractUrlEncodedVideos().
+
+# Hacking
+
+YouTube change and may change protocol in the future. Here is a several libraries which follow YouTube "improvements" and look into it. If you'd like to keep this library updated and wont debug youtube hacks alone you may change what people saying here:
+
+  * https://github.com/rg3/youtube-dl
+    * https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/youtube.py
+  * http://sourceforge.net/projects/ytd2
+  * https://github.com/pculture/miro
+    * https://github.com/pculture/miro/blob/master/tv/lib/flashscraper.py
