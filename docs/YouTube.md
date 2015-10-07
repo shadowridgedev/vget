@@ -6,9 +6,9 @@ This is very simple. All work done in two steps.
 
 1) vget open html video page https://www.youtube.com/watch?v=sPKtTIckdkc and extract download links
 
-2) then vget pass url to wget library which does actual download.
+2) then vget pass url to [wget](https://github.com/axet/wget) library which does actual download.
 
-YouTube have simple server structure. Main http server, which handles http requests and how you html pages. And CDN servers, which handles video files.
+YouTube have simple server structure. Main http server, which handles http requests and generate your html page. And CDN servers, which handles video files requests from youtube html5 player.
 
 After you request html video page html server generate a page with randomly selected CDN servers and return it to the user. Depend on CDN server it may have different software installed, and handle video urls different.
 
