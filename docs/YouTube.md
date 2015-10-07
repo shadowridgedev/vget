@@ -38,6 +38,10 @@ It is simple. We ask YouTube to generate our html in two different ways. Somethi
 
 Then we parse html using extractHtmlInfo() and inside it extractUrlEncodedVideos().
 
+ extractHtmlInfo() - extract encrypted urls hidden in youtube html page.
+
+extractUrlEncodedVideos() converts buggly encrupted URLS to proper download urls - ususally this method fails. Last time, for example youtube added "sig=" url parameter instead of "signature=".
+
 # Hacking
 
 YouTube change and may change protocol in the future. Here is a several libraries which follow YouTube "improvements" and look into it. If you'd like to keep this library updated and wont debug youtube hacks alone you may look what people saying here:
