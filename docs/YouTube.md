@@ -8,7 +8,7 @@ This is very simple. All work done in two steps.
 
 2) then vget pass url to [wget](https://github.com/axet/wget) library which does actual download.
 
-How wget download a file - does not matter, it handles the job correctly and did not fail. But since vget works with generated html it may fail which happens often because YouTube changes generated html.
+How wget download a file - does not matter, it handles the job correctly and do not fail. But since vget works with generated html it may fail which happens often because YouTube changes generated html.
 
 YouTube have simple server structure. Main http server, which handles http requests and generate your html page. And CDN servers, which handles video files requests from youtube html5 player.
 
