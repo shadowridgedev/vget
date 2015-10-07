@@ -6,13 +6,6 @@ Support for Youtube, Vimeo. Multithread downloads. Based on multithread download
 
 Pure java!
 
-Inspired by http://sourceforge.net/projects/ytd2/.
-
-Code taken from ytd2 and completely rewritten to support more web sites.
-
-Good examples here:
-  https://github.com/pculture/miro/blob/master/tv/lib/flashscraper.py
-
 How this library works: [YouTube](docs/YouTube.md)
 
 ## Exceptions
