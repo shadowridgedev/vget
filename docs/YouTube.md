@@ -1,0 +1,1 @@
+This document explain how vget download video from youtube servers. If you'd to improve, fix bugs or create new parser class this document would help.
