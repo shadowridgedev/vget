@@ -38,7 +38,7 @@ Then we parse html using extractHtmlInfo() and inside it extractUrlEncodedVideos
 
 # Hacking
 
-YouTube change and may change protocol in the future. Here is a several libraries which follow YouTube "improvements" and look into it. If you'd like to keep this library updated and wont debug youtube hacks alone you may change what people saying here:
+YouTube change and may change protocol in the future. Here is a several libraries which follow YouTube "improvements" and look into it. If you'd like to keep this library updated and wont debug youtube hacks alone you may look what people saying here:
 
   * https://github.com/rg3/youtube-dl
     * https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/youtube.py
