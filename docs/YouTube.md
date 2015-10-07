@@ -20,4 +20,12 @@ Video URL may be few types. First type - combined video stream, video and sound 
 
 Currently I see no correct way of handling split streams, (two separate files or merge two streams on the fly) vget works only with 720p.
 
+# Source
+
 [YouTubeParser.java](/src/main/java/com/github/axet/vget/vhs/YouTubeParser.java)
+
+vget hack youtube in few ways, it may emulate embedded video links, or emulate browser html. Check out:
+
+  *  extractLinks
+    * streamCpature
+    * extractEmbedded
