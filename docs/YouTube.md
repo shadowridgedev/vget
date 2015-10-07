@@ -24,8 +24,14 @@ Currently I see no correct way of handling split streams, (two separate files or
 
 [YouTubeParser.java](/src/main/java/com/github/axet/vget/vhs/YouTubeParser.java)
 
-vget hack youtube in few ways, it may emulate embedded video links, or emulate browser html. Check out:
+vget hack youtube in few ways, it may emulate embedded video links, or emulate browser html.
 
-  *  extractLinks
-    * streamCpature
-    * extractEmbedded
+Main extract function is  extract() it call for booth extract using embedded url and extract using browser url.  
+
+  *  extractLinks()
+    * streamCpature()
+    * extractEmbedded()
+
+It is simple. We ask YouTube to generate our html in two different ways. Somethims embedded links allows you to watch country restreicted videos, or age restricted vidoes. So it is good to have booth calls.
+
+Then we parse html using extractHtmlInfo() and inside it extractUrlEncodedVideos().
