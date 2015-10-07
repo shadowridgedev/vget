@@ -13,6 +13,8 @@ Code taken from ytd2 and completely rewritten to support more web sites.
 Good examples here:
   https://github.com/pculture/miro/blob/master/tv/lib/flashscraper.py
 
+How this library works: [YouTube](docs/YouTube.md)
+
 ## Exceptions
 
 Here are a two kind of exceptions.
