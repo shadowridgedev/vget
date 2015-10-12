@@ -244,7 +244,7 @@ public class YouTubeParser extends VGetParser {
         html = WGet.getHtml(info.getWeb(), new WGet.HtmlLoader() {
             @Override
             public void notifyRetry(int delay, Throwable e) {
-                info.setDelay(delay, e);
+                info.setRetrying(delay, e);
                 notify.run();
             }
 
@@ -400,7 +400,7 @@ public class YouTubeParser extends VGetParser {
         String qs = WGet.getHtml(url, new WGet.HtmlLoader() {
             @Override
             public void notifyRetry(int delay, Throwable e) {
-                info.setDelay(delay, e);
+                info.setRetrying(delay, e);
                 notify.run();
             }
 

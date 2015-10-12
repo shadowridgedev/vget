@@ -150,7 +150,7 @@ public class VGet {
                 if (Thread.currentThread().isInterrupted())
                     throw new DownloadInterruptedError("interrupted");
 
-                info.setDelay(i, e);
+                info.setRetrying(i, e);
                 notify.run();
 
                 try {
@@ -160,15 +160,20 @@ public class VGet {
                 }
             }
 
-            for (DownloadInfo i : info.getInfo()) {
-                try {
-                    // if we continue to download from old source, and this
-                    // proxy server is down we have to try to extract new info and try
-                    // to resume download
+            try {
+                // if we continue to download from old source, and this
+                // proxy server is down we have to try to extract new info
+                // and try to resume download
 
-                    DownloadInfo infoOld = i;
-                    user = parser(user, info.getWeb());
-                    user.info(info, stop, notify);
+                List<DownloadInfo> infoOldList = info.getInfo();
+
+                user = parser(user, info.getWeb());
+                user.info(info, stop, notify);
+
+                // info replaced by user.info call
+                List<DownloadInfo> infoNewList = info.getInfo();
+
+                for (DownloadInfo infoOld : infoOldList) {
                     DownloadInfo infoNew = i;
 
                     if (infoOld != null && infoOld.resume(infoNew)) {
@@ -181,17 +186,17 @@ public class VGet {
                     }
 
                     retracted = true;
-                } catch (DownloadIOCodeError ee) {
-                    if (retry(ee)) {
-                        info.setState(States.RETRYING, ee);
-                        notify.run();
-                    } else {
-                        throw ee;
-                    }
-                } catch (DownloadRetry ee) {
+                }
+            } catch (DownloadIOCodeError ee) {
+                if (retry(ee)) {
                     info.setState(States.RETRYING, ee);
                     notify.run();
+                } else {
+                    throw ee;
                 }
+            } catch (DownloadRetry ee) {
+                info.setState(States.RETRYING, ee);
+                notify.run();
             }
         }
     }
@@ -393,34 +398,63 @@ public class VGet {
 
             while (!done(stop)) {
                 try {
-                    final List<DownloadInfo> dinfol = info.getInfo();
+                    final List<DownloadInfo> dinfoList = info.getInfo();
+
+                    // all working threads have its own stop. separated from
+                    // vget.stop
+                    // it is nessesery because we have to be able to cancel
+                    // downloading
+                    // for a single part without stopping actual download.
+                    final AtomicBoolean stopl = new AtomicBoolean(false);
+
+                    Thread stopr = new Thread() {
+                        @Override
+                        public void run() {
+                            synchronized (stop) {
+                                try {
+                                    stop.wait();
+                                } catch (InterruptedException e) {
+                                    return;
+                                }
+                                stopl.set(stop.get());
+                            }
+                        }
+                    };
+                    stopr.start();
 
                     LimitThreadPool l = new LimitThreadPool(Runtime.getRuntime().availableProcessors());
 
-                    for (final DownloadInfo dinfo : dinfol) {
-                        if (dinfo.getContentType() == null || !dinfo.getContentType().contains("video/")) {
-                            throw new DownloadRetry("unable to download video, bad content " + dinfo.getContentType());
+                    for (final DownloadInfo dinfo : dinfoList) {
+                        {
+                            boolean v = dinfo.getContentType().contains("video/");
+                            boolean a = false;// dinfo.getContentType().contains("audio/");
+                            if (dinfo.getContentType() == null || (!v && !a)) {
+                                stopl.set(true);
+                                throw new DownloadRetry(
+                                        "unable to download video, bad content " + dinfo.getContentType());
+                            }
                         }
 
                         target(dinfo);
 
-                        Direct direct;
+                        Direct directV;
 
                         File targetFile = mergeExt(dinfo);
 
                         if (dinfo.multipart()) {
                             // multi part? overwrite.
-                            direct = new DirectMultipart(dinfo, targetFile);
+                            directV = new DirectMultipart(dinfo, targetFile);
                         } else if (dinfo.getRange()) {
                             // range download? try to resume download from last
                             // position
                             if (targetFile.exists() && targetFile.length() != dinfo.getCount())
                                 targetFile = null;
-                            direct = new DirectRange(dinfo, targetFile);
+                            directV = new DirectRange(dinfo, targetFile);
                         } else {
                             // single download? overwrite file
-                            direct = new DirectSingle(dinfo, targetFile);
+                            directV = new DirectSingle(dinfo, targetFile);
                         }
+                        final Direct direct = directV;
 
                         final Runnable r = new Runnable() {
                             @Override
@@ -431,7 +465,7 @@ public class VGet {
                                     notify.run();
                                     break;
                                 case RETRYING:
-                                    info.setDelay(dinfo.getDelay(), dinfo.getException());
+                                    info.setRetrying(dinfo.getDelay(), dinfo.getException());
                                     notify.run();
                                     break;
                                 default:
@@ -443,12 +477,14 @@ public class VGet {
                         };
 
                         try {
-                            final Direct d = direct;
-
                             l.blockExecute(new Runnable() {
                                 @Override
                                 public void run() {
-                                    d.download(stop, r);
+                                    try {
+                                        direct.download(stopl, r);
+                                    } catch (DownloadInterruptedError e) {
+                                        // ignore
+                                    }
                                 }
                             });
                         } catch (InterruptedException e) {
@@ -458,6 +494,7 @@ public class VGet {
 
                     try {
                         l.waitUntilTermination();
+                        stopr.interrupt();
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                     }

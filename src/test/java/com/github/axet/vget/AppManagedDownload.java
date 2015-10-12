@@ -15,7 +15,7 @@ import com.github.axet.wget.info.DownloadInfo.Part.States;
 
 public class AppManagedDownload {
 
-    VideoInfo info;
+    VideoInfo videoinfo;
     long last;
 
     public void run(String url, File path) {
@@ -24,27 +24,36 @@ public class AppManagedDownload {
             Runnable notify = new Runnable() {
                 @Override
                 public void run() {
-                    VideoInfo i1 = info;
-                    List<DownloadInfo> i2 = i1.getInfo();
+                    VideoInfo videoinfo = AppManagedDownload.this.videoinfo;
+                    List<DownloadInfo> dinfoList = videoinfo.getInfo();
 
                     // notify app or save download state
                     // you can extract information from DownloadInfo info;
-                    switch (i1.getState()) {
+                    switch (videoinfo.getState()) {
                     case EXTRACTING:
                     case EXTRACTING_DONE:
                     case DONE:
-                        if (i1 instanceof YouTubeInfo) {
-                            YouTubeInfo i = (YouTubeInfo) i1;
-                            System.out.println(i1.getState() + " " + i.getVideoQuality());
-                        } else if (i1 instanceof VimeoInfo) {
-                            VimeoInfo i = (VimeoInfo) i1;
-                            System.out.println(i1.getState() + " " + i.getVideoQuality());
+                        if (videoinfo instanceof YouTubeInfo) {
+                            YouTubeInfo i = (YouTubeInfo) videoinfo;
+                            System.out.println(videoinfo.getState() + " " + i.getVideoQuality());
+                        } else if (videoinfo instanceof VimeoInfo) {
+                            VimeoInfo i = (VimeoInfo) videoinfo;
+                            System.out.println(videoinfo.getState() + " " + i.getVideoQuality());
                         } else {
                             System.out.println("downloading unknown quality");
                         }
                         break;
                     case RETRYING:
-                        System.out.println(i1.getState() + " " + i1.getDelay());
+                        if (dinfoList != null) {
+                            for (DownloadInfo dinfo : dinfoList) {
+                                // if
+                                // (dinfo.getState().equals(DownloadInfo.States.RETRYING))
+                                System.out.println(
+                                        dinfoList.indexOf(dinfo) + " - " + dinfo.getState() + " " + dinfo.getDelay());
+                            }
+                        } else {
+                            System.out.println(videoinfo.getState() + " " + videoinfo.getDelay());
+                        }
                         break;
                     case DOWNLOADING:
                         long now = System.currentTimeMillis();
@@ -53,8 +62,8 @@ public class AppManagedDownload {
 
                             String parts = "";
 
-                            for (DownloadInfo i3 : i2) {
-                                List<Part> pp = i3.getParts();
+                            for (DownloadInfo dinfo : dinfoList) {
+                                List<Part> pp = dinfo.getParts();
                                 if (pp != null) {
                                     // multipart download
                                     for (Part p : pp) {
@@ -64,9 +73,8 @@ public class AppManagedDownload {
                                         }
                                     }
                                 }
-
-                                System.out.println(String.format("%s %.2f %s", i1.getState(),
-                                        i3.getCount() / (float) i3.getLength(), parts));
+                                System.out.println(String.format("%d - %s %.2f %s", dinfoList.indexOf(dinfo),
+                                        videoinfo.getState(), dinfo.getCount() / (float) dinfo.getLength(), parts));
                             }
                         }
                         break;
@@ -95,17 +103,18 @@ public class AppManagedDownload {
             // user = new YouTubeMPGParser();
 
             // create proper videoinfo to keep specific video information
-            info = user.info(web);
+            videoinfo = user.info(web);
 
-            VGet v = new VGet(info, path);
+            VGet v = new VGet(videoinfo, path);
 
             // [OPTIONAL] call v.extract() only if you d like to get video title
-            // or download url link
-            // before start download. or just skip it.
+            // or download url link before start download. or just skip it.
             v.extract(user, stop, notify);
 
-            System.out.println("Title: " + info.getTitle());
-            System.out.println("Download URL: " + info.getSource());
+            System.out.println("Title: " + videoinfo.getTitle());
+            for (DownloadInfo d : videoinfo.getInfo()) {
+                System.out.println("Download URL: " + d.getSource());
+            }
 
             v.download(user, stop, notify);
         } catch (RuntimeException e) {

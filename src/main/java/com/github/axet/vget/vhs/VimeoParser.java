@@ -134,7 +134,7 @@ public class VimeoParser extends VGetParser {
             String html = WGet.getHtml(url, new HtmlLoader() {
                 @Override
                 public void notifyRetry(int delay, Throwable e) {
-                    info.setDelay(delay, e);
+                    info.setRetrying(delay, e);
                     notify.run();
                 }
 
@@ -166,7 +166,7 @@ public class VimeoParser extends VGetParser {
             String htmlConfig = WGet.getHtml(new URL(config), new HtmlLoader() {
                 @Override
                 public void notifyRetry(int delay, Throwable e) {
-                    info.setDelay(delay, e);
+                    info.setRetrying(delay, e);
                     notify.run();
                 }
 
