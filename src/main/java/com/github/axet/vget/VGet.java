@@ -4,11 +4,13 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import com.github.axet.threads.LimitThreadPool;
 import com.github.axet.vget.info.VGetParser;
 import com.github.axet.vget.info.VideoInfo;
 import com.github.axet.vget.info.VideoInfo.States;
@@ -158,39 +160,48 @@ public class VGet {
                 }
             }
 
-            try {
-                // if we continue to download from old source, and this proxy
-                // server is
-                // down we have to try to extract new info and try to resume
-                // download
+            for (DownloadInfo i : info.getInfo()) {
+                try {
+                    // if we continue to download from old source, and this
+                    // proxy server is down we have to try to extract new info and try
+                    // to resume download
 
-                DownloadInfo infoOld = info.getInfo();
-                user = parser(user, info.getWeb());
-                user.info(info, stop, notify);
-                DownloadInfo infoNew = info.getInfo();
+                    DownloadInfo infoOld = i;
+                    user = parser(user, info.getWeb());
+                    user.info(info, stop, notify);
+                    DownloadInfo infoNew = i;
 
-                if (infoOld != null && infoOld.resume(infoNew)) {
-                    infoNew.copy(infoOld);
-                } else {
-                    if (targetFile != null) {
-                        FileUtils.deleteQuietly(targetFile);
-                        targetFile = null;
+                    if (infoOld != null && infoOld.resume(infoNew)) {
+                        infoNew.copy(infoOld);
+                    } else {
+                        if (targetFile != null) {
+                            FileUtils.deleteQuietly(targetFile);
+                            targetFile = null;
+                        }
                     }
-                }
 
-                retracted = true;
-            } catch (DownloadIOCodeError ee) {
-                if (retry(ee)) {
+                    retracted = true;
+                } catch (DownloadIOCodeError ee) {
+                    if (retry(ee)) {
+                        info.setState(States.RETRYING, ee);
+                        notify.run();
+                    } else {
+                        throw ee;
+                    }
+                } catch (DownloadRetry ee) {
                     info.setState(States.RETRYING, ee);
                     notify.run();
-                } else {
-                    throw ee;
                 }
-            } catch (DownloadRetry ee) {
-                info.setState(States.RETRYING, ee);
-                notify.run();
             }
         }
+    }
+
+    String getExt(DownloadInfo dinfo) {
+        String ct = dinfo.getContentType();
+        if (ct == null)
+            throw new DownloadRetry("null content type");
+
+        return ct.replaceFirst("video/", "").replaceAll("x-", "").toLowerCase();
     }
 
     void target(DownloadInfo dinfo) {
@@ -218,11 +229,7 @@ public class VGet {
 
             sfilename = maxFileNameLength(sfilename);
 
-            String ct = dinfo.getContentType();
-            if (ct == null)
-                throw new DownloadRetry("null content type");
-
-            String ext = ct.replaceFirst("video/", "").replaceAll("x-", "");
+            String ext = getExt(dinfo);
 
             do {
                 String add = idupcount > 0 ? " (".concat(idupcount.toString()).concat(")") : "";
@@ -321,7 +328,8 @@ public class VGet {
     }
 
     /**
-     * check if all parts has the same filenotfound exception. if so throw DownloadError.FilenotFoundexcepiton
+     * check if all parts has the same filenotfound exception. if so throw
+     * DownloadError.FilenotFoundexcepiton
      * 
      * @param e
      */
@@ -363,6 +371,16 @@ public class VGet {
         download(null, stop, notify);
     }
 
+    File mergeExt(DownloadInfo info) {
+        String ext = getExt(info);
+
+        String f = targetFile.getAbsolutePath();
+        if (f.toLowerCase().endsWith(ext.toLowerCase())) {
+            return new File(f);
+        }
+        return new File(f + ext);
+    }
+
     public void download(VGetParser user, final AtomicBoolean stop, final Runnable notify) {
         if (targetFile == null && targetForce == null && targetDir == null) {
             throw new RuntimeException("Set download file or directory first");
@@ -375,50 +393,74 @@ public class VGet {
 
             while (!done(stop)) {
                 try {
-                    final DownloadInfo dinfo = info.getInfo();
+                    final List<DownloadInfo> dinfol = info.getInfo();
 
-                    if (dinfo.getContentType() == null || !dinfo.getContentType().contains("video/")) {
-                        throw new DownloadRetry("unable to download video, bad content");
-                    }
+                    LimitThreadPool l = new LimitThreadPool(Runtime.getRuntime().availableProcessors());
 
-                    target(dinfo);
-
-                    Direct direct;
-
-                    if (dinfo.multipart()) {
-                        // multi part? overwrite.
-                        direct = new DirectMultipart(dinfo, targetFile);
-                    } else if (dinfo.getRange()) {
-                        // range download? try to resume download from last
-                        // position
-                        if (targetFile.exists() && targetFile.length() != dinfo.getCount())
-                            targetFile = null;
-                        direct = new DirectRange(dinfo, targetFile);
-                    } else {
-                        // single download? overwrite file
-                        direct = new DirectSingle(dinfo, targetFile);
-                    }
-
-                    direct.download(stop, new Runnable() {
-                        @Override
-                        public void run() {
-                            switch (dinfo.getState()) {
-                            case DOWNLOADING:
-                                info.setState(States.DOWNLOADING);
-                                notify.run();
-                                break;
-                            case RETRYING:
-                                info.setDelay(dinfo.getDelay(), dinfo.getException());
-                                notify.run();
-                                break;
-                            default:
-                                // we can safely skip all statues. (extracting -
-                                // already
-                                // pased, STOP / ERROR / DONE i will catch up
-                                // here
-                            }
+                    for (final DownloadInfo dinfo : dinfol) {
+                        if (dinfo.getContentType() == null || !dinfo.getContentType().contains("video/")) {
+                            throw new DownloadRetry("unable to download video, bad content " + dinfo.getContentType());
                         }
-                    });
+
+                        target(dinfo);
+
+                        Direct direct;
+
+                        File targetFile = mergeExt(dinfo);
+
+                        if (dinfo.multipart()) {
+                            // multi part? overwrite.
+                            direct = new DirectMultipart(dinfo, targetFile);
+                        } else if (dinfo.getRange()) {
+                            // range download? try to resume download from last
+                            // position
+                            if (targetFile.exists() && targetFile.length() != dinfo.getCount())
+                                targetFile = null;
+                            direct = new DirectRange(dinfo, targetFile);
+                        } else {
+                            // single download? overwrite file
+                            direct = new DirectSingle(dinfo, targetFile);
+                        }
+
+                        final Runnable r = new Runnable() {
+                            @Override
+                            public void run() {
+                                switch (dinfo.getState()) {
+                                case DOWNLOADING:
+                                    info.setState(States.DOWNLOADING);
+                                    notify.run();
+                                    break;
+                                case RETRYING:
+                                    info.setDelay(dinfo.getDelay(), dinfo.getException());
+                                    notify.run();
+                                    break;
+                                default:
+                                    // we can safely skip all statues.
+                                    // (extracting - already passed, STOP /
+                                    // ERROR / DONE i will catch up here
+                                }
+                            }
+                        };
+
+                        try {
+                            final Direct d = direct;
+
+                            l.blockExecute(new Runnable() {
+                                @Override
+                                public void run() {
+                                    d.download(stop, r);
+                                }
+                            });
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                    }
+
+                    try {
+                        l.waitUntilTermination();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
 
                     info.setState(States.DONE);
                     notify.run();

@@ -1,12 +1,13 @@
 package com.github.axet.vget.vhs;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.github.axet.vget.info.VideoInfo;
-import com.github.axet.vget.vhs.YoutubeInfo.StreamCombined;
-import com.github.axet.vget.vhs.YoutubeInfo.YoutubeQuality;
+import com.github.axet.vget.vhs.YouTubeInfo.StreamCombined;
+import com.github.axet.vget.vhs.YouTubeInfo.YoutubeQuality;
 import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.ex.DownloadError;
 import com.github.axet.wget.info.ex.DownloadRetry;
@@ -19,7 +20,7 @@ public class YouTubeQParser extends YouTubeParser {
         this.q = q;
     }
 
-    public DownloadInfo extract(final VideoInfo vinfo, final AtomicBoolean stop, final Runnable notify) {
+    public List<DownloadInfo> extract(final VideoInfo vinfo, final AtomicBoolean stop, final Runnable notify) {
         List<VideoDownload> sNextVideoURL = extractLinks(vinfo, stop, notify);
 
         if (sNextVideoURL.size() == 0) {
@@ -39,16 +40,17 @@ public class YouTubeQParser extends YouTubeParser {
 
             boolean found = true;
 
-            StreamCombined vq =  (StreamCombined) v.stream;
-            
+            StreamCombined vq = (StreamCombined) v.stream;
+
             found &= q.equals(vq.vq);
 
             if (found) {
-                YoutubeInfo yinfo = (YoutubeInfo) vinfo;
+                YouTubeInfo yinfo = (YouTubeInfo) vinfo;
                 yinfo.setStreamInfo(vq);
                 DownloadInfo info = new DownloadInfo(v.url);
-                vinfo.setInfo(info);
-                return info;
+                vinfo.setInfo(Arrays.asList(info));
+                vinfo.setSource(v.url);
+                return vinfo.getInfo();
             }
         }
 

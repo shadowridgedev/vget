@@ -3,6 +3,7 @@ package com.github.axet.vget.vhs;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -21,7 +22,6 @@ import com.github.axet.wget.WGet;
 import com.github.axet.wget.WGet.HtmlLoader;
 import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.ex.DownloadError;
-import com.github.axet.wget.info.ex.DownloadRetry;
 import com.google.gson.Gson;
 
 public class VimeoParser extends VGetParser {
@@ -204,7 +204,7 @@ public class VimeoParser extends VGetParser {
     }
 
     @Override
-    public DownloadInfo extract(VideoInfo vinfo, AtomicBoolean stop, Runnable notify) {
+    public List<DownloadInfo> extract(VideoInfo vinfo, AtomicBoolean stop, Runnable notify) {
         List<VideoDownload> sNextVideoURL = extractLinks(vinfo, stop, notify);
 
         Collections.sort(sNextVideoURL, new VideoContentFirst());
@@ -215,8 +215,9 @@ public class VimeoParser extends VGetParser {
             VimeoInfo yinfo = (VimeoInfo) vinfo;
             yinfo.setVideoQuality(v.vq);
             DownloadInfo info = new DownloadInfo(v.url);
-            vinfo.setInfo(info);
-            return info;
+            vinfo.setInfo(Arrays.asList(info));
+            vinfo.setSource(v.url);
+            return vinfo.getInfo();
         }
 
         // throw download stop if user choice not maximum quality and we have no

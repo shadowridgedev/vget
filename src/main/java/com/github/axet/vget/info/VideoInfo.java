@@ -1,12 +1,10 @@
 package com.github.axet.vget.info;
 
 import java.net.URL;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.ArrayList;
+import java.util.List;
 
-import com.github.axet.vget.vhs.VimeoParser;
-import com.github.axet.vget.vhs.YouTubeParser;
 import com.github.axet.wget.info.DownloadInfo;
-import com.github.axet.wget.info.ex.DownloadInterruptedError;
 
 public class VideoInfo {
 
@@ -17,7 +15,8 @@ public class VideoInfo {
     // user friendly url (not direct video stream url)
     private URL web;
 
-    private DownloadInfo info;
+    private URL source;
+    private List<DownloadInfo> info = new ArrayList<DownloadInfo>();
     private String title;
     private URL icon;
 
@@ -73,11 +72,11 @@ public class VideoInfo {
         this.title = title;
     }
 
-    public DownloadInfo getInfo() {
+    public List<DownloadInfo> getInfo() {
         return info;
     }
 
-    public void setInfo(DownloadInfo info) {
+    public void setInfo(List<DownloadInfo> info) {
         this.info = info;
     }
 
@@ -129,6 +128,14 @@ public class VideoInfo {
 
     public void setIcon(URL icon) {
         this.icon = icon;
+    }
+
+    public URL getSource() {
+        return source;
+    }
+
+    public void setSource(URL source) {
+        this.source = source;
     }
 
 }

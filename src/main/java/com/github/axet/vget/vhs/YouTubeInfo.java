@@ -4,7 +4,7 @@ import java.net.URL;
 
 import com.github.axet.vget.info.VideoInfo;
 
-public class YoutubeInfo extends VideoInfo {
+public class YouTubeInfo extends VideoInfo {
 
     // keep it in order hi->lo
     public enum YoutubeQuality {
@@ -101,7 +101,7 @@ public class YoutubeInfo extends VideoInfo {
 
     private StreamInfo vq;
 
-    public YoutubeInfo(URL web) {
+    public YouTubeInfo(URL web) {
         super(web);
     }
 

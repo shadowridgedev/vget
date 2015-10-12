@@ -1,6 +1,7 @@
 package com.github.axet.vget.info;
 
 import java.net.URL;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.github.axet.vget.info.VideoInfo.States;
@@ -13,13 +14,14 @@ public abstract class VGetParser {
 
     public void info(VideoInfo info, AtomicBoolean stop, Runnable notify) {
         try {
-            DownloadInfo dinfo = extract(info, stop, notify);
+            List<DownloadInfo> dinfo = extract(info, stop, notify);
 
             info.setInfo(dinfo);
 
-            dinfo.setReferer(info.getWeb());
-
-            dinfo.extract(stop, notify);
+            for (DownloadInfo i : dinfo) {
+                i.setReferer(info.getWeb());
+                i.extract(stop, notify);
+            }
         } catch (DownloadInterruptedError e) {
             info.setState(States.STOP, e);
 
@@ -31,6 +33,6 @@ public abstract class VGetParser {
         }
     }
 
-    public abstract DownloadInfo extract(final VideoInfo vinfo, final AtomicBoolean stop, final Runnable notify);
+    public abstract List<DownloadInfo> extract(final VideoInfo vinfo, final AtomicBoolean stop, final Runnable notify);
 
 }
