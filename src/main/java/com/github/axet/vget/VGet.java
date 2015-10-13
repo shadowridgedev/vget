@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.github.axet.threads.LimitThreadPool;
@@ -140,6 +141,18 @@ public class VGet {
         return false;
     }
 
+    DownloadInfo getNewInfo(List<DownloadInfo> infoList, DownloadInfo infoOld) {
+        if (infoOld == null)
+            return null;
+
+        for (DownloadInfo d : infoList) {
+            if (infoOld.resume(d))
+                return d;
+        }
+
+        return null;
+    }
+
     void retry(VGetParser user, AtomicBoolean stop, Runnable notify, Throwable e) {
         boolean retracted = false;
 
@@ -170,15 +183,16 @@ public class VGet {
                 user = parser(user, info.getWeb());
                 user.info(info, stop, notify);
 
-                // info replaced by user.info call
+                // info replaced by user.info() call
                 List<DownloadInfo> infoNewList = info.getInfo();
 
                 for (DownloadInfo infoOld : infoOldList) {
-                    DownloadInfo infoNew = i;
+                    DownloadInfo infoNew = getNewInfo(infoNewList, infoOld);
 
-                    if (infoOld != null && infoOld.resume(infoNew)) {
+                    if (infoOld != null && infoNew != null && infoOld.resume(infoNew)) {
                         infoNew.copy(infoOld);
                     } else {
+                        File targetFile = mergeExt(infoOld);
                         if (targetFile != null) {
                             FileUtils.deleteQuietly(targetFile);
                             targetFile = null;
@@ -206,7 +220,11 @@ public class VGet {
         if (ct == null)
             throw new DownloadRetry("null content type");
 
-        return ct.replaceFirst("video/", "").replaceAll("x-", "").toLowerCase();
+        ct = ct.replaceFirst("video/", "");
+
+        ct = ct.replaceFirst("audio/", "");
+
+        return "." + ct.replaceAll("x-", "").toLowerCase();
     }
 
     void target(DownloadInfo dinfo) {
@@ -239,7 +257,7 @@ public class VGet {
             do {
                 String add = idupcount > 0 ? " (".concat(idupcount.toString()).concat(")") : "";
 
-                f = new File(targetDir, sfilename + add + "." + ext);
+                f = new File(targetDir, sfilename + add + ext);
                 idupcount += 1;
             } while (f.exists());
 
@@ -377,12 +395,16 @@ public class VGet {
     }
 
     File mergeExt(DownloadInfo info) {
+        if (info == null)
+            return targetFile;
+
         String ext = getExt(info);
 
         String f = targetFile.getAbsolutePath();
         if (f.toLowerCase().endsWith(ext.toLowerCase())) {
             return new File(f);
         }
+        f = FilenameUtils.removeExtension(f);
         return new File(f + ext);
     }
 
@@ -401,13 +423,12 @@ public class VGet {
                     final List<DownloadInfo> dinfoList = info.getInfo();
 
                     // all working threads have its own stop. separated from
-                    // vget.stop
-                    // it is nessesery because we have to be able to cancel
-                    // downloading
-                    // for a single part without stopping actual download.
+                    // vget.stop it is nessesery because we have to be able to
+                    // cancel downloading for a single DownloadInfo without
+                    // stopping whole download.
                     final AtomicBoolean stopl = new AtomicBoolean(false);
 
-                    Thread stopr = new Thread() {
+                    Thread stopr = new Thread("stopr") {
                         @Override
                         public void run() {
                             synchronized (stop) {
@@ -422,12 +443,12 @@ public class VGet {
                     };
                     stopr.start();
 
-                    LimitThreadPool l = new LimitThreadPool(Runtime.getRuntime().availableProcessors());
+                    LimitThreadPool l = new LimitThreadPool(4);
 
                     for (final DownloadInfo dinfo : dinfoList) {
                         {
                             boolean v = dinfo.getContentType().contains("video/");
-                            boolean a = false;// dinfo.getContentType().contains("audio/");
+                            boolean a = dinfo.getContentType().contains("audio/");
                             if (dinfo.getContentType() == null || (!v && !a)) {
                                 stopl.set(true);
                                 throw new DownloadRetry(
@@ -483,7 +504,10 @@ public class VGet {
                                     try {
                                         direct.download(stopl, r);
                                     } catch (DownloadInterruptedError e) {
-                                        // ignore
+                                        synchronized (stopl) {
+                                            stopl.set(true);
+                                            stopl.notifyAll();
+                                        }
                                     }
                                 }
                             });
