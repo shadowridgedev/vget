@@ -696,6 +696,7 @@ public class YouTubeParser extends VGetParser {
         }
 
         Collections.sort(videos, new VideoContentFirst());
+        Collections.sort(audios, new VideoContentFirst());
 
         for (int i = 0; i < videos.size();) {
             VideoDownload v = videos.get(i);
