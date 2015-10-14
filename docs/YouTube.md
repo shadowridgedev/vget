@@ -20,8 +20,6 @@ YouTube may generate page with proper url secret parameters which you have to pa
 
 Video URL may be few types. First type - combined video stream, video and sound comes togeter. This stream have quality cap - combined stream have maximum 720p. And second type of the stream split stream: video and sound streams provided as separate URLS. This split streams have no quality limitations, so you may download 4k videos. Here a lot of other types of streams like 3d streams. You can find out what types of stream youtube used to be on Wikipedia: http://en.wikipedia.org/wiki/YouTube#Quality_and_codecs
 
-Currently I see no correct way of handling split streams, (two separate files or merge two streams on the fly) vget works only with 720p.
-
 # Source
 
 [YouTubeParser.java](/src/main/java/com/github/axet/vget/vhs/YouTubeParser.java)
