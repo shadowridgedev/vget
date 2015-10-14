@@ -4,7 +4,7 @@ This document explain how vget download video from youtube servers. If you'd to 
 
 This is very simple. All work done in two steps.
 
-1) vget open html video page https://www.youtube.com/watch?v=sPKtTIckdkc and extract download links
+1) vget open html video page https://www.youtube.com/watch?v=sPKtTIckdkc and extract direct video links
 
 2) then vget pass url to [wget](https://github.com/axet/wget) library which does actual download.
 
