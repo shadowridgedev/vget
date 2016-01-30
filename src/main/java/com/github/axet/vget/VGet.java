@@ -33,18 +33,21 @@ import com.github.axet.wget.info.ex.DownloadMultipartError;
 import com.github.axet.wget.info.ex.DownloadRetry;
 
 public class VGet {
-
     VideoInfo info;
+    // target directory, where we have to download. automatically name files
+    // based on video title and conflict files.
     File targetDir;
 
+    // if target file exists, override it. ignores video titles and ignores
+    // instead adding (1), (2) ... to filename suffix for conflict files
+    // (exists files)
     File targetForce = null;
-
-    File targetFile = null;
 
     /**
      * extract video information constructor
      * 
-     * @param source url source to get video from
+     * @param source
+     *            url source to get video from
      */
     public VGet(URL source) {
         this(source, null);
@@ -65,15 +68,6 @@ public class VGet {
 
     public void setTargetDir(File targetDir) {
         this.targetDir = targetDir;
-    }
-
-    /**
-     * get output file on local file system
-     * 
-     * @return target file name
-     */
-    public File getTarget() {
-        return targetFile;
     }
 
     public VideoInfo getVideo() {
@@ -97,7 +91,7 @@ public class VGet {
     }
 
     /**
-     * Drop all foribiden characters from filename
+     * Drop all forbidden characters from filename
      * 
      * @param f
      *            input file name
@@ -193,10 +187,10 @@ public class VGet {
                     if (infoOld != null && infoNew != null && infoOld.resume(infoNew)) {
                         infoNew.copy(infoOld);
                     } else {
-                        File targetFile = mergeExt(infoOld);
-                        if (targetFile != null) {
-                            FileUtils.deleteQuietly(targetFile);
-                            targetFile = null;
+                        mergeExt(infoOld);
+                        if (infoOld.targetFile != null) {
+                            FileUtils.deleteQuietly(infoOld.targetFile);
+                            infoOld.targetFile = null;
                         }
                     }
 
@@ -228,23 +222,27 @@ public class VGet {
         return "." + ct.replaceAll("x-", "").toLowerCase();
     }
 
-    void target(DownloadInfo dinfo) {
+    void target(VideoFileInfo dinfo) {
         if (targetForce != null) {
-            targetFile = targetForce;
+            dinfo.targetFile = targetForce;
 
             if (dinfo.multipart()) {
-                if (!DirectMultipart.canResume(dinfo, targetFile))
-                    targetFile = null;
+                if (!DirectMultipart.canResume(dinfo, dinfo.targetFile))
+                    dinfo.targetFile = null;
             } else if (dinfo.getRange()) {
-                if (!DirectRange.canResume(dinfo, targetFile))
-                    targetFile = null;
+                if (!DirectRange.canResume(dinfo, dinfo.targetFile))
+                    dinfo.targetFile = null;
             } else {
-                if (!DirectSingle.canResume(dinfo, targetFile))
-                    targetFile = null;
+                if (!DirectSingle.canResume(dinfo, dinfo.targetFile))
+                    dinfo.targetFile = null;
             }
         }
 
-        if (targetFile == null) {
+        if (dinfo.targetFile == null) {
+            if (targetDir == null) {
+                throw new RuntimeException("Set download file or directory first");
+            }
+
             File f;
 
             Integer idupcount = 0;
@@ -262,7 +260,7 @@ public class VGet {
                 idupcount += 1;
             } while (f.exists());
 
-            targetFile = f;
+            dinfo.targetFile = f;
 
             // if we dont have resume file (targetForce==null) then we shall
             // start over.
@@ -289,7 +287,8 @@ public class VGet {
     }
 
     /**
-     * @return return status of download information. subclassing for VideoInfo.empty();
+     * @return return status of download information. subclassing for
+     *         VideoInfo.empty();
      * 
      */
     public boolean empty() {
@@ -311,9 +310,12 @@ public class VGet {
     /**
      * extract video information, retry until success
      * 
-     * @param user user info object
-     * @param stop stop signal boolean
-     * @param notify notify executre
+     * @param user
+     *            user info object
+     * @param stop
+     *            stop signal boolean
+     * @param notify
+     *            notify executre
      */
     public void extract(VGetParser user, AtomicBoolean stop, Runnable notify) {
         while (!done(stop)) {
@@ -355,7 +357,8 @@ public class VGet {
      * check if all parts has the same filenotfound exception. if so throw
      * DownloadError.FilenotFoundexcepiton
      * 
-     * @param e error occured
+     * @param e
+     *            error occured
      */
     void checkFileNotFound(DownloadMultipartError e) {
         FileNotFoundException f = null;
@@ -395,25 +398,21 @@ public class VGet {
         download(null, stop, notify);
     }
 
-    File mergeExt(DownloadInfo info) {
+    void mergeExt(VideoFileInfo info) {
         if (info == null)
-            return targetFile;
+            return;
 
         String ext = getExt(info);
 
-        String f = targetFile.getAbsolutePath();
+        String f = info.targetFile.getAbsolutePath();
         if (f.toLowerCase().endsWith(ext.toLowerCase())) {
-            return new File(f);
+            info.targetFile = new File(f);
         }
         f = FilenameUtils.removeExtension(f);
-        return new File(f + ext);
+        info.targetFile = new File(f + ext);
     }
 
     public void download(VGetParser user, final AtomicBoolean stop, final Runnable notify) {
-        if (targetFile == null && targetForce == null && targetDir == null) {
-            throw new RuntimeException("Set download file or directory first");
-        }
-
         try {
             if (empty()) {
                 extract(user, stop, notify);
@@ -459,9 +458,13 @@ public class VGet {
 
                         target(dinfo);
 
-                        Direct directV;
+                        mergeExt(dinfo);
 
-                        dinfo.targetFile = mergeExt(dinfo);
+                        if (dinfo.targetFile == null && targetForce == null && targetDir == null) {
+                            throw new RuntimeException("bad target");
+                        }
+
+                        Direct directV;
 
                         if (dinfo.multipart()) {
                             // multi part? overwrite.
