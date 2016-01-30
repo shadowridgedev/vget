@@ -179,6 +179,6 @@ public class AppManagedDownload {
 <dependency>
   <groupId>com.github.axet</groupId>
   <artifactId>vget</artifactId>
-  <version>1.1.23</version>
+  <version>1.1.25</version>
 </dependency>
 ```
