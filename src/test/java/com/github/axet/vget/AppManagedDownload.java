@@ -60,8 +60,6 @@ public class AppManagedDownload {
                     case RETRYING:
                         if (dinfoList != null) {
                             for (DownloadInfo dinfo : dinfoList) {
-                                // if
-                                // (dinfo.getState().equals(DownloadInfo.States.RETRYING))
                                 System.out.println("file:" + dinfoList.indexOf(dinfo) + " - " + dinfo.getState() + " "
                                         + dinfo.getException() + " delay:" + dinfo.getDelay());
                             }
