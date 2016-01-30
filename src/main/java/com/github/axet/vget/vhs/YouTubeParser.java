@@ -24,14 +24,8 @@ import javax.script.ScriptEngineManager;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.util.EntityUtils;
 
 import com.github.axet.vget.info.VGetParser;
 import com.github.axet.vget.info.VideoFileInfo;
@@ -46,7 +40,6 @@ import com.github.axet.vget.vhs.YouTubeInfo.StreamInfo;
 import com.github.axet.vget.vhs.YouTubeInfo.StreamVideo;
 import com.github.axet.vget.vhs.YouTubeInfo.YoutubeQuality;
 import com.github.axet.wget.WGet;
-import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.ex.DownloadError;
 import com.github.axet.wget.info.ex.DownloadRetry;
 
@@ -180,29 +173,35 @@ public class YouTubeParser extends VGetParser {
          * 
          * @return player.js file
          */
-        private String getHtml5PlayerScript() {
+        private String getHtml5PlayerScript(final AtomicBoolean stop, final Runnable notify) {
+            String url = playerCache.get(playerURI.toString());
 
-            if (!playerCache.containsKey(playerURI.toString())) {
-
-                HttpResponse response = null;
-                HttpClient client = new DefaultHttpClient();
-
-                String result = null;
-                HttpGet get = new HttpGet(playerURI);
+            if (url == null) {
                 try {
-                    response = client.execute(get);
-                    if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-                        result = EntityUtils.toString(response.getEntity());
-                        // puts the html5 player file into the cache
-                        playerCache.put(playerURI.toString(), result);
-                    }
-                } catch (Exception e) {
-                    throw new DownloadError("Unable to download the html5 palyer file!");
+                    String result = WGet.getHtml(playerURI.toURL(), new WGet.HtmlLoader() {
+                        @Override
+                        public void notifyRetry(int delay, Throwable e) {
+                            notify.run();
+                        }
+
+                        @Override
+                        public void notifyMoved() {
+                            notify.run();
+                        }
+
+                        @Override
+                        public void notifyDownloading() {
+                            notify.run();
+                        }
+                    }, stop);
+                    playerCache.put(playerURI.toString(), result);
+                    return result;
+                } catch (MalformedURLException e) {
+                    throw new RuntimeException(e);
                 }
-                return result;
-            } else {
-                return playerCache.get(playerURI.toString());
             }
+
+            return url;
         }
 
         /**
@@ -276,12 +275,12 @@ public class YouTubeParser extends VGetParser {
          * Decodes the youtube video signature using the decode functions
          * provided in the html5player script.
          */
-        String decrypt() {
+        String decrypt(AtomicBoolean stop, Runnable notify) {
             ScriptEngineManager manager = new ScriptEngineManager();
             // use a js script engine
             ScriptEngine engine = manager.getEngineByName("JavaScript");
 
-            final String playerScript = getHtml5PlayerScript();
+            final String playerScript = getHtml5PlayerScript(stop, notify);
             final String decodeFuncName = getMainDecodeFunctionName(playerScript);
             final String decodeScript = extractDecodeFunctions(playerScript, decodeFuncName);
 
@@ -342,6 +341,7 @@ public class YouTubeParser extends VGetParser {
         public VideoDeleted(String msg) {
             super(msg);
         }
+
     }
 
     public YouTubeParser() {
@@ -505,6 +505,10 @@ public class YouTubeParser extends VGetParser {
             put(141, new StreamAudio(Container.MP4, Encoding.AAC, AudioQuality.k256));
             put(171, new StreamAudio(Container.WEBM, Encoding.VORBIS, AudioQuality.k128));
             put(172, new StreamAudio(Container.WEBM, Encoding.VORBIS, AudioQuality.k192));
+
+            put(249, new StreamAudio(Container.WEBM, Encoding.OPUS, AudioQuality.k50));
+            put(250, new StreamAudio(Container.WEBM, Encoding.OPUS, AudioQuality.k70));
+            put(251, new StreamAudio(Container.WEBM, Encoding.OPUS, AudioQuality.k160));
         }
     };
 
@@ -587,7 +591,7 @@ public class YouTubeParser extends VGetParser {
 
         String url_encoded_fmt_stream_map = URLDecoder.decode(map.get("url_encoded_fmt_stream_map"), UTF8);
 
-        extractUrlEncodedVideos(sNextVideoURL, url_encoded_fmt_stream_map, info);
+        extractUrlEncodedVideos(sNextVideoURL, url_encoded_fmt_stream_map, info, stop, notify);
 
         // 'iurlmaxresæ or 'iurlsd' or 'thumbnail_url'
         String icon = map.get("thumbnail_url");
@@ -665,7 +669,7 @@ public class YouTubeParser extends VGetParser {
                 if (encodMatch.find()) {
                     String sline = encodMatch.group(1);
 
-                    extractUrlEncodedVideos(sNextVideoURL, sline, info);
+                    extractUrlEncodedVideos(sNextVideoURL, sline, info, stop, notify);
                 }
 
                 // stream video
@@ -712,7 +716,7 @@ public class YouTubeParser extends VGetParser {
                 if (encodMatch.find()) {
                     String sline = encodMatch.group(1);
 
-                    extractUrlEncodedVideos(sNextVideoURL, sline, info);
+                    extractUrlEncodedVideos(sNextVideoURL, sline, info, stop, notify);
                 }
 
                 // stream video
@@ -758,7 +762,8 @@ public class YouTubeParser extends VGetParser {
         }
     }
 
-    void extractUrlEncodedVideos(List<VideoDownload> sNextVideoURL, String sline, YouTubeInfo info) throws Exception {
+    void extractUrlEncodedVideos(List<VideoDownload> sNextVideoURL, String sline, YouTubeInfo info, AtomicBoolean stop,
+            Runnable notify) throws Exception {
         String[] urlStrings = sline.split("url=");
 
         for (String urlString : urlStrings) {
@@ -816,7 +821,7 @@ public class YouTubeParser extends VGetParser {
                             sig = ss.decrypt();
                         } else {
                             DecryptSignatureHtml5 ss = new DecryptSignatureHtml5(sig, info.getPlayerURI());
-                            sig = ss.decrypt();
+                            sig = ss.decrypt(stop, notify);
                         }
                     }
                 }
