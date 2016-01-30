@@ -641,6 +641,15 @@ public class YouTubeParser extends VGetParser {
                 throw new VideoUnavailablePlayer();
         }
 
+        // grab html5 player url
+        {
+            Pattern playerURL = Pattern.compile("(//.*?/player-[\\w\\d\\-]+\\/.*\\.js)");
+            Matcher playerVersionMatch = playerURL.matcher(html);
+            if (playerVersionMatch.find()) {
+                info.setPlayerURI(new URI("https:" + playerVersionMatch.group(1)));
+            }
+        }
+
         // combined streams
         {
             Pattern urlencod = Pattern.compile("\"url_encoded_fmt_stream_map\":\"([^\"]*)\"");
