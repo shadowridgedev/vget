@@ -43,7 +43,7 @@ public class VGet {
     /**
      * extract video information constructor
      * 
-     * @param source
+     * @param source url source to get video from
      */
     public VGet(URL source) {
         this(source, null);
@@ -69,7 +69,7 @@ public class VGet {
     /**
      * get output file on local file system
      * 
-     * @return
+     * @return target file name
      */
     public File getTarget() {
         return targetFile;
@@ -288,9 +288,8 @@ public class VGet {
     }
 
     /**
-     * return status of download information. subclassing for VideoInfo.empty();
+     * @return return status of download information. subclassing for VideoInfo.empty();
      * 
-     * @return
      */
     public boolean empty() {
         return getVideo().empty();
@@ -311,8 +310,9 @@ public class VGet {
     /**
      * extract video information, retry until success
      * 
-     * @param stop
-     * @param notify
+     * @param user user info object
+     * @param stop stop signal boolean
+     * @param notify notify executre
      */
     public void extract(VGetParser user, AtomicBoolean stop, Runnable notify) {
         while (!done(stop)) {
@@ -354,7 +354,7 @@ public class VGet {
      * check if all parts has the same filenotfound exception. if so throw
      * DownloadError.FilenotFoundexcepiton
      * 
-     * @param e
+     * @param e error occured
      */
     void checkFileNotFound(DownloadMultipartError e) {
         FileNotFoundException f = null;
