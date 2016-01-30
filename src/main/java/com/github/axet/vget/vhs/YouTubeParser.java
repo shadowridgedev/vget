@@ -540,9 +540,9 @@ public class YouTubeParser extends VGetParser {
             throw new RuntimeException("unknown url");
         }
 
-        info.setTitle(String.format("http://www.youtube.com/watch?v=%s", id));
+        info.setTitle(String.format("https://www.youtube.com/watch?v=%s", id));
 
-        String get = String.format("http://www.youtube.com/get_video_info?authuser=0&video_id=%s&el=embedded", id);
+        String get = String.format("https://www.youtube.com/get_video_info?authuser=0&video_id=%s&el=embedded", id);
 
         URL url = new URL(get);
 
@@ -641,6 +641,15 @@ public class YouTubeParser extends VGetParser {
                 throw new VideoUnavailablePlayer();
         }
 
+        // grab html5 player url
+        {
+            Pattern playerURL = Pattern.compile("(//.*?/player-[\\w\\d\\-]+\\/.*\\.js)");
+            Matcher playerVersionMatch = playerURL.matcher(html);
+            if (playerVersionMatch.find()) {
+                info.setPlayerURI(new URI("https:" + playerVersionMatch.group(1)));
+            }
+        }
+
         // combined streams
         {
             Pattern urlencod = Pattern.compile("\"url_encoded_fmt_stream_map\":\"([^\"]*)\"");
@@ -677,7 +686,7 @@ public class YouTubeParser extends VGetParser {
                             String itag = linkMatch.group(2);
                             String url = linkMatch.group(3);
 
-                            url = "http" + url + "?" + sparams;
+                            url = "https" + url + "?" + sparams;
 
                             url = URLDecoder.decode(url, UTF8);
 
@@ -724,7 +733,7 @@ public class YouTubeParser extends VGetParser {
                             String itag = linkMatch.group(2);
                             String url = linkMatch.group(3);
 
-                            url = "http" + url + "?" + sparams;
+                            url = "https" + url + "?" + sparams;
 
                             url = URLDecoder.decode(url, UTF8);
 
