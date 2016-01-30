@@ -12,14 +12,26 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.script.Invocable;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
 
 import com.github.axet.vget.info.VGetParser;
 import com.github.axet.vget.info.VideoInfo;
@@ -150,6 +162,143 @@ public class YouTubeParser extends VGetParser {
         }
     }
 
+    // thanks to @github.com/chberger
+    static class DecryptSignatureHtml5 {
+        String sig;
+        URI playerURI;
+        static ConcurrentMap<String, String> playerCache = new ConcurrentHashMap<String, String>();
+
+        public DecryptSignatureHtml5(String signatur, URI playerURI) {
+            this.sig = signatur;
+            this.playerURI = playerURI;
+        }
+
+        /**
+         * Gets the corresponding html5player.js in order to decode youtube
+         * video signature
+         * 
+         * @return player.js file
+         */
+        private String getHtml5PlayerScript() {
+
+            if (!playerCache.containsKey(playerURI.toString())) {
+
+                HttpResponse response = null;
+                HttpClient client = new DefaultHttpClient();
+
+                String result = null;
+                HttpGet get = new HttpGet(playerURI);
+                try {
+                    response = client.execute(get);
+                    if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                        result = EntityUtils.toString(response.getEntity());
+                        // puts the html5 player file into the cache
+                        playerCache.put(playerURI.toString(), result);
+                    }
+                } catch (Exception e) {
+                    throw new DownloadError("Unable to download the html5 palyer file!");
+                }
+                return result;
+            } else {
+                return playerCache.get(playerURI.toString());
+            }
+        }
+
+        /**
+         * Determines the main decode function name. Unfortunately the name of
+         * the decode-funtion might change from version to version, but the part
+         * of the code that makes use of this function usually doesn't change.
+         * So let's give it a try.
+         * 
+         * @param playerJS
+         *            corresponding javascript html5 player file
+         * @return name of decode-function or null
+         */
+        private String getMainDecodeFunctionName(String playerJS) {
+            Pattern decodeFunctionName = Pattern.compile("\\.sig\\|\\|([a-zA-Z0-9$]+)\\(");
+            Matcher decodeFunctionNameMatch = decodeFunctionName.matcher(playerJS);
+            if (decodeFunctionNameMatch.find()) {
+                return decodeFunctionNameMatch.group(1);
+            }
+            return null;
+        }
+
+        /**
+         * Extracts the relevant decode functions of the html5player script.
+         * Besides the main decode function we need to extract some utility
+         * functions the decode-function is using.
+         * 
+         * @param playerJS
+         *            the html5player script
+         * @param functionName
+         *            the main decode function name
+         * @return returns only those functions which are relevant for the
+         *         signature decoding
+         */
+        private String extractDecodeFunctions(String playerJS, String functionName) {
+            StringBuilder decodeScript = new StringBuilder();
+            Pattern decodeFunction = Pattern
+                    // this will probably change from version to version so
+                    // changes have to be done here
+                    .compile(String.format("(%s=function\\([a-zA-Z0-9$]+\\)\\{.*?\\}),", functionName), Pattern.DOTALL);
+            Matcher decodeFunctionMatch = decodeFunction.matcher(playerJS);
+            if (decodeFunctionMatch.find()) {
+                decodeScript.append(decodeFunctionMatch.group(1)).append(';');
+            } else {
+                throw new DownloadError("Unable to extract the main decode function!");
+            }
+
+            // determine the name of the helper function which is used by the
+            // main decode function
+            Pattern decodeFunctionHelperName = Pattern.compile("\\);([a-zA-Z0-9]+)\\.");
+            Matcher decodeFunctionHelperNameMatch = decodeFunctionHelperName.matcher(decodeScript.toString());
+            if (decodeFunctionHelperNameMatch.find()) {
+                final String decodeFuncHelperName = decodeFunctionHelperNameMatch.group(1);
+
+                Pattern decodeFunctionHelper = Pattern.compile(
+                        String.format("(var %s=\\{[a-zA-Z]*:function\\(.*?\\};)", decodeFuncHelperName),
+                        Pattern.DOTALL);
+                Matcher decodeFunctionHelperMatch = decodeFunctionHelper.matcher(playerJS);
+                if (decodeFunctionHelperMatch.find()) {
+                    decodeScript.append(decodeFunctionHelperMatch.group(1));
+                } else {
+                    throw new DownloadError("Unable to extract the helper decode functions!");
+                }
+
+            } else {
+                throw new DownloadError("Unable to determine the name of the helper decode function!");
+            }
+            return decodeScript.toString();
+        }
+
+        /**
+         * Decodes the youtube video signature using the decode functions
+         * provided in the html5player script.
+         */
+        String decrypt() {
+            ScriptEngineManager manager = new ScriptEngineManager();
+            // use a js script engine
+            ScriptEngine engine = manager.getEngineByName("JavaScript");
+
+            final String playerScript = getHtml5PlayerScript();
+            final String decodeFuncName = getMainDecodeFunctionName(playerScript);
+            final String decodeScript = extractDecodeFunctions(playerScript, decodeFuncName);
+
+            String decodedSignature = null;
+            try {
+                // evaluate script
+                engine.eval(decodeScript);
+                Invocable inv = (Invocable) engine;
+                // execute the javascript code directly
+                decodedSignature = (String) inv.invokeFunction(decodeFuncName, sig);
+            } catch (Exception e) {
+                throw new DownloadError("Unable to decrypt signature!");
+            }
+
+            return decodedSignature;
+        }
+    }
+
     public static class VideoUnavailablePlayer extends DownloadError {
         private static final long serialVersionUID = 10905065542230199L;
 
@@ -201,7 +350,7 @@ public class YouTubeParser extends VGetParser {
         return url.toString().contains("youtube.com");
     }
 
-    public List<VideoDownload> extractLinks(final VideoInfo info) {
+    public List<VideoDownload> extractLinks(final YouTubeInfo info) {
         return extractLinks(info, new AtomicBoolean(), new Runnable() {
             @Override
             public void run() {
@@ -209,7 +358,7 @@ public class YouTubeParser extends VGetParser {
         });
     }
 
-    public List<VideoDownload> extractLinks(final VideoInfo info, final AtomicBoolean stop, final Runnable notify) {
+    public List<VideoDownload> extractLinks(final YouTubeInfo info, final AtomicBoolean stop, final Runnable notify) {
         try {
             List<VideoDownload> sNextVideoURL = new ArrayList<VideoDownload>();
 
@@ -238,7 +387,7 @@ public class YouTubeParser extends VGetParser {
      * @param notify
      * @throws Exception
      */
-    void streamCapture(List<VideoDownload> sNextVideoURL, final VideoInfo info, final AtomicBoolean stop,
+    void streamCapture(List<VideoDownload> sNextVideoURL, final YouTubeInfo info, final AtomicBoolean stop,
             final Runnable notify) throws Exception {
         String html;
         html = WGet.getHtml(info.getWeb(), new WGet.HtmlLoader() {
@@ -384,7 +533,7 @@ public class YouTubeParser extends VGetParser {
      * @param notify
      * @throws Exception
      */
-    void extractEmbedded(List<VideoDownload> sNextVideoURL, final VideoInfo info, final AtomicBoolean stop,
+    void extractEmbedded(List<VideoDownload> sNextVideoURL, final YouTubeInfo info, final AtomicBoolean stop,
             final Runnable notify) throws Exception {
         String id = extractId(info.getWeb());
         if (id == null) {
@@ -437,7 +586,7 @@ public class YouTubeParser extends VGetParser {
 
         String url_encoded_fmt_stream_map = URLDecoder.decode(map.get("url_encoded_fmt_stream_map"), UTF8);
 
-        extractUrlEncodedVideos(sNextVideoURL, url_encoded_fmt_stream_map);
+        extractUrlEncodedVideos(sNextVideoURL, url_encoded_fmt_stream_map, info);
 
         // 'iurlmaxresæ or 'iurlsd' or 'thumbnail_url'
         String icon = map.get("thumbnail_url");
@@ -476,7 +625,7 @@ public class YouTubeParser extends VGetParser {
         }
     }
 
-    void extractHtmlInfo(List<VideoDownload> sNextVideoURL, VideoInfo info, String html, AtomicBoolean stop,
+    void extractHtmlInfo(List<VideoDownload> sNextVideoURL, YouTubeInfo info, String html, AtomicBoolean stop,
             Runnable notify) throws Exception {
         {
             Pattern age = Pattern.compile("(verify_age)");
@@ -506,7 +655,7 @@ public class YouTubeParser extends VGetParser {
                 if (encodMatch.find()) {
                     String sline = encodMatch.group(1);
 
-                    extractUrlEncodedVideos(sNextVideoURL, sline);
+                    extractUrlEncodedVideos(sNextVideoURL, sline, info);
                 }
 
                 // stream video
@@ -553,7 +702,7 @@ public class YouTubeParser extends VGetParser {
                 if (encodMatch.find()) {
                     String sline = encodMatch.group(1);
 
-                    extractUrlEncodedVideos(sNextVideoURL, sline);
+                    extractUrlEncodedVideos(sNextVideoURL, sline, info);
                 }
 
                 // stream video
@@ -599,7 +748,7 @@ public class YouTubeParser extends VGetParser {
         }
     }
 
-    void extractUrlEncodedVideos(List<VideoDownload> sNextVideoURL, String sline) throws Exception {
+    void extractUrlEncodedVideos(List<VideoDownload> sNextVideoURL, String sline, YouTubeInfo info) throws Exception {
         String[] urlStrings = sline.split("url=");
 
         for (String urlString : urlStrings) {
@@ -652,8 +801,13 @@ public class YouTubeParser extends VGetParser {
                     if (linkMatch.find()) {
                         sig = linkMatch.group(1);
 
-                        DecryptSignature ss = new DecryptSignature(sig);
-                        sig = ss.decrypt();
+                        if (info.getPlayerURI() == null) {
+                            DecryptSignature ss = new DecryptSignature(sig);
+                            sig = ss.decrypt();
+                        } else {
+                            DecryptSignatureHtml5 ss = new DecryptSignatureHtml5(sig, info.getPlayerURI());
+                            sig = ss.decrypt();
+                        }
                     }
                 }
 
@@ -673,7 +827,7 @@ public class YouTubeParser extends VGetParser {
 
     @Override
     public List<DownloadInfo> extract(VideoInfo vinfo, AtomicBoolean stop, Runnable notify) {
-        List<VideoDownload> videos = extractLinks(vinfo, stop, notify);
+        List<VideoDownload> videos = extractLinks((YouTubeInfo) vinfo, stop, notify);
 
         if (videos.size() == 0) {
             // rare error:

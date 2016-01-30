@@ -1,5 +1,6 @@
 package com.github.axet.vget.vhs;
 
+import java.net.URI;
 import java.net.URL;
 
 import com.github.axet.vget.info.VideoInfo;
@@ -100,6 +101,7 @@ public class YouTubeInfo extends VideoInfo {
     }
 
     private StreamInfo vq;
+    private URI playerURI;
 
     public YouTubeInfo(URL web) {
         super(web);
@@ -111,6 +113,14 @@ public class YouTubeInfo extends VideoInfo {
 
     public void setStreamInfo(StreamInfo vq) {
         this.vq = vq;
+    }
+
+    public URI getPlayerURI() {
+        return playerURI;
+    }
+
+    public void setPlayerURI(URI playerURI) {
+        this.playerURI = playerURI;
     }
 
 }

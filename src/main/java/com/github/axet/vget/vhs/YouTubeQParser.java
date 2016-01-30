@@ -21,7 +21,7 @@ public class YouTubeQParser extends YouTubeParser {
     }
 
     public List<DownloadInfo> extract(final VideoInfo vinfo, final AtomicBoolean stop, final Runnable notify) {
-        List<VideoDownload> sNextVideoURL = extractLinks(vinfo, stop, notify);
+        List<VideoDownload> sNextVideoURL = extractLinks((YouTubeInfo) vinfo, stop, notify);
 
         if (sNextVideoURL.size() == 0) {
             // rare error:
