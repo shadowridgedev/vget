@@ -4,11 +4,14 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import com.github.axet.threads.LimitThreadPool;
 import com.github.axet.vget.info.VGetParser;
 import com.github.axet.vget.info.VideoInfo;
 import com.github.axet.vget.info.VideoInfo.States;
@@ -138,6 +141,18 @@ public class VGet {
         return false;
     }
 
+    DownloadInfo getNewInfo(List<DownloadInfo> infoList, DownloadInfo infoOld) {
+        if (infoOld == null)
+            return null;
+
+        for (DownloadInfo d : infoList) {
+            if (infoOld.resume(d))
+                return d;
+        }
+
+        return null;
+    }
+
     void retry(VGetParser user, AtomicBoolean stop, Runnable notify, Throwable e) {
         boolean retracted = false;
 
@@ -148,7 +163,7 @@ public class VGet {
                 if (Thread.currentThread().isInterrupted())
                     throw new DownloadInterruptedError("interrupted");
 
-                info.setDelay(i, e);
+                info.setRetrying(i, e);
                 notify.run();
 
                 try {
@@ -159,26 +174,33 @@ public class VGet {
             }
 
             try {
-                // if we continue to download from old source, and this proxy
-                // server is
-                // down we have to try to extract new info and try to resume
-                // download
+                // if we continue to download from old source, and this
+                // proxy server is down we have to try to extract new info
+                // and try to resume download
 
-                DownloadInfo infoOld = info.getInfo();
+                List<DownloadInfo> infoOldList = info.getInfo();
+
                 user = parser(user, info.getWeb());
                 user.info(info, stop, notify);
-                DownloadInfo infoNew = info.getInfo();
 
-                if (infoOld != null && infoOld.resume(infoNew)) {
-                    infoNew.copy(infoOld);
-                } else {
-                    if (targetFile != null) {
-                        FileUtils.deleteQuietly(targetFile);
-                        targetFile = null;
+                // info replaced by user.info() call
+                List<DownloadInfo> infoNewList = info.getInfo();
+
+                for (DownloadInfo infoOld : infoOldList) {
+                    DownloadInfo infoNew = getNewInfo(infoNewList, infoOld);
+
+                    if (infoOld != null && infoNew != null && infoOld.resume(infoNew)) {
+                        infoNew.copy(infoOld);
+                    } else {
+                        File targetFile = mergeExt(infoOld);
+                        if (targetFile != null) {
+                            FileUtils.deleteQuietly(targetFile);
+                            targetFile = null;
+                        }
                     }
-                }
 
-                retracted = true;
+                    retracted = true;
+                }
             } catch (DownloadIOCodeError ee) {
                 if (retry(ee)) {
                     info.setState(States.RETRYING, ee);
@@ -191,6 +213,18 @@ public class VGet {
                 notify.run();
             }
         }
+    }
+
+    String getExt(DownloadInfo dinfo) {
+        String ct = dinfo.getContentType();
+        if (ct == null)
+            throw new DownloadRetry("null content type");
+
+        ct = ct.replaceFirst("video/", "");
+
+        ct = ct.replaceFirst("audio/", "");
+
+        return "." + ct.replaceAll("x-", "").toLowerCase();
     }
 
     void target(DownloadInfo dinfo) {
@@ -218,16 +252,12 @@ public class VGet {
 
             sfilename = maxFileNameLength(sfilename);
 
-            String ct = dinfo.getContentType();
-            if (ct == null)
-                throw new DownloadRetry("null content type");
-
-            String ext = ct.replaceFirst("video/", "").replaceAll("x-", "");
+            String ext = getExt(dinfo);
 
             do {
                 String add = idupcount > 0 ? " (".concat(idupcount.toString()).concat(")") : "";
 
-                f = new File(targetDir, sfilename + add + "." + ext);
+                f = new File(targetDir, sfilename + add + ext);
                 idupcount += 1;
             } while (f.exists());
 
@@ -321,7 +351,8 @@ public class VGet {
     }
 
     /**
-     * check if all parts has the same filenotfound exception. if so throw DownloadError.FilenotFoundexcepiton
+     * check if all parts has the same filenotfound exception. if so throw
+     * DownloadError.FilenotFoundexcepiton
      * 
      * @param e
      */
@@ -363,6 +394,20 @@ public class VGet {
         download(null, stop, notify);
     }
 
+    File mergeExt(DownloadInfo info) {
+        if (info == null)
+            return targetFile;
+
+        String ext = getExt(info);
+
+        String f = targetFile.getAbsolutePath();
+        if (f.toLowerCase().endsWith(ext.toLowerCase())) {
+            return new File(f);
+        }
+        f = FilenameUtils.removeExtension(f);
+        return new File(f + ext);
+    }
+
     public void download(VGetParser user, final AtomicBoolean stop, final Runnable notify) {
         if (targetFile == null && targetForce == null && targetDir == null) {
             throw new RuntimeException("Set download file or directory first");
@@ -375,50 +420,108 @@ public class VGet {
 
             while (!done(stop)) {
                 try {
-                    final DownloadInfo dinfo = info.getInfo();
+                    final List<DownloadInfo> dinfoList = info.getInfo();
 
-                    if (dinfo.getContentType() == null || !dinfo.getContentType().contains("video/")) {
-                        throw new DownloadRetry("unable to download video, bad content");
-                    }
+                    // all working threads have its own stop. separated from
+                    // vget.stop it is nessesery because we have to be able to
+                    // cancel downloading for a single DownloadInfo without
+                    // stopping whole download.
+                    final AtomicBoolean stopl = new AtomicBoolean(false);
 
-                    target(dinfo);
-
-                    Direct direct;
-
-                    if (dinfo.multipart()) {
-                        // multi part? overwrite.
-                        direct = new DirectMultipart(dinfo, targetFile);
-                    } else if (dinfo.getRange()) {
-                        // range download? try to resume download from last
-                        // position
-                        if (targetFile.exists() && targetFile.length() != dinfo.getCount())
-                            targetFile = null;
-                        direct = new DirectRange(dinfo, targetFile);
-                    } else {
-                        // single download? overwrite file
-                        direct = new DirectSingle(dinfo, targetFile);
-                    }
-
-                    direct.download(stop, new Runnable() {
+                    Thread stopr = new Thread("stopr") {
                         @Override
                         public void run() {
-                            switch (dinfo.getState()) {
-                            case DOWNLOADING:
-                                info.setState(States.DOWNLOADING);
-                                notify.run();
-                                break;
-                            case RETRYING:
-                                info.setDelay(dinfo.getDelay(), dinfo.getException());
-                                notify.run();
-                                break;
-                            default:
-                                // we can safely skip all statues. (extracting -
-                                // already
-                                // pased, STOP / ERROR / DONE i will catch up
-                                // here
+                            synchronized (stop) {
+                                try {
+                                    stop.wait();
+                                } catch (InterruptedException e) {
+                                    return;
+                                }
+                                stopl.set(stop.get());
                             }
                         }
-                    });
+                    };
+                    stopr.start();
+
+                    LimitThreadPool l = new LimitThreadPool(4);
+
+                    for (final DownloadInfo dinfo : dinfoList) {
+                        {
+                            boolean v = dinfo.getContentType().contains("video/");
+                            boolean a = dinfo.getContentType().contains("audio/");
+                            if (dinfo.getContentType() == null || (!v && !a)) {
+                                stopl.set(true);
+                                throw new DownloadRetry(
+                                        "unable to download video, bad content " + dinfo.getContentType());
+                            }
+                        }
+
+                        target(dinfo);
+
+                        Direct directV;
+
+                        File targetFile = mergeExt(dinfo);
+
+                        if (dinfo.multipart()) {
+                            // multi part? overwrite.
+                            directV = new DirectMultipart(dinfo, targetFile);
+                        } else if (dinfo.getRange()) {
+                            // range download? try to resume download from last
+                            // position
+                            if (targetFile.exists() && targetFile.length() != dinfo.getCount())
+                                targetFile = null;
+                            directV = new DirectRange(dinfo, targetFile);
+                        } else {
+                            // single download? overwrite file
+                            directV = new DirectSingle(dinfo, targetFile);
+                        }
+                        final Direct direct = directV;
+
+                        final Runnable r = new Runnable() {
+                            @Override
+                            public void run() {
+                                switch (dinfo.getState()) {
+                                case DOWNLOADING:
+                                    info.setState(States.DOWNLOADING);
+                                    notify.run();
+                                    break;
+                                case RETRYING:
+                                    info.setRetrying(dinfo.getDelay(), dinfo.getException());
+                                    notify.run();
+                                    break;
+                                default:
+                                    // we can safely skip all statues.
+                                    // (extracting - already passed, STOP /
+                                    // ERROR / DONE i will catch up here
+                                }
+                            }
+                        };
+
+                        try {
+                            l.blockExecute(new Runnable() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        direct.download(stopl, r);
+                                    } catch (DownloadInterruptedError e) {
+                                        synchronized (stopl) {
+                                            stopl.set(true);
+                                            stopl.notifyAll();
+                                        }
+                                    }
+                                }
+                            });
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                    }
+
+                    try {
+                        l.waitUntilTermination();
+                        stopr.interrupt();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
 
                     info.setState(States.DONE);
                     notify.run();

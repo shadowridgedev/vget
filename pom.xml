@@ -4,7 +4,7 @@
   <groupId>com.github.axet</groupId>
   <artifactId>vget</artifactId>
   <packaging>jar</packaging>
-  <version>1.1.23</version>
+  <version>1.1.24</version>
   <name>vget</name>
   <description>vget java video download library</description>
   <url>https://github.com/axet/vget</url>
@@ -37,7 +37,7 @@
     <developer>
       <id>axet</id>
       <name>Alexey Kuznetsov</name>
-      <email>ak@axet.ru</email>
+      <email>axet@me.com</email>
     </developer>
   </developers>
 
@@ -60,7 +60,7 @@
     <dependency>
       <groupId>com.github.axet</groupId>
       <artifactId>wget</artifactId>
-      <version>1.2.11</version>
+      <version>1.2.16</version>
     </dependency>
     <dependency>
       <groupId>com.google.code.gson</groupId>

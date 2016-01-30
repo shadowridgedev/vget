@@ -1,12 +1,10 @@
 package com.github.axet.vget.info;
 
 import java.net.URL;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.ArrayList;
+import java.util.List;
 
-import com.github.axet.vget.vhs.VimeoParser;
-import com.github.axet.vget.vhs.YouTubeParser;
 import com.github.axet.wget.info.DownloadInfo;
-import com.github.axet.wget.info.ex.DownloadInterruptedError;
 
 public class VideoInfo {
 
@@ -17,7 +15,8 @@ public class VideoInfo {
     // user friendly url (not direct video stream url)
     private URL web;
 
-    private DownloadInfo info;
+    private URL source;
+    private List<DownloadInfo> info = new ArrayList<DownloadInfo>();
     private String title;
     private URL icon;
 
@@ -48,14 +47,14 @@ public class VideoInfo {
      * 
      * @return true - if extract() already been called
      */
-    public boolean empty() {
+    synchronized public boolean empty() {
         return info == null;
     }
 
     /**
      * reset videoinfo state. make it simialar as after calling constructor
      */
-    public void reset() {
+    synchronized public void reset() {
         setState(States.QUEUE);
 
         info = null;
@@ -65,70 +64,78 @@ public class VideoInfo {
         delay = 0;
     }
 
-    public String getTitle() {
+    synchronized public String getTitle() {
         return title;
     }
 
-    public void setTitle(String title) {
+    synchronized public void setTitle(String title) {
         this.title = title;
     }
 
-    public DownloadInfo getInfo() {
+    synchronized public List<DownloadInfo> getInfo() {
         return info;
     }
 
-    public void setInfo(DownloadInfo info) {
+    synchronized public void setInfo(List<DownloadInfo> info) {
         this.info = info;
     }
 
-    public URL getWeb() {
+    synchronized public URL getWeb() {
         return web;
     }
 
-    public void setWeb(URL source) {
+    synchronized public void setWeb(URL source) {
         this.web = source;
     }
 
-    public States getState() {
+    synchronized public States getState() {
         return state;
     }
 
-    public void setState(States state) {
+    synchronized public void setState(States state) {
         this.state = state;
         this.exception = null;
         this.delay = 0;
     }
 
-    public void setState(States state, Throwable e) {
+    synchronized public void setState(States state, Throwable e) {
         this.state = state;
         this.exception = e;
         this.delay = 0;
     }
 
-    public int getDelay() {
+    synchronized public int getDelay() {
         return delay;
     }
 
-    public void setDelay(int delay, Throwable e) {
+    synchronized public void setRetrying(int delay, Throwable e) {
         this.delay = delay;
         this.exception = e;
         this.state = States.RETRYING;
     }
 
-    public Throwable getException() {
+    synchronized public Throwable getException() {
         return exception;
     }
 
-    public void setException(Throwable exception) {
+    synchronized public void setException(Throwable exception) {
         this.exception = exception;
     }
 
-    public URL getIcon() {
+    synchronized public URL getIcon() {
         return icon;
     }
 
-    public void setIcon(URL icon) {
+    synchronized public void setIcon(URL icon) {
         this.icon = icon;
+    }
+
+    synchronized public URL getSource() {
+        return source;
+    }
+
+    synchronized public void setSource(URL source) {
+        this.source = source;
     }
 
 }

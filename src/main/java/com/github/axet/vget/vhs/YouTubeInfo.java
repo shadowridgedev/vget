@@ -1,10 +1,11 @@
 package com.github.axet.vget.vhs;
 
+import java.net.URI;
 import java.net.URL;
 
 import com.github.axet.vget.info.VideoInfo;
 
-public class YoutubeInfo extends VideoInfo {
+public class YouTubeInfo extends VideoInfo {
 
     // keep it in order hi->lo
     public enum YoutubeQuality {
@@ -100,8 +101,9 @@ public class YoutubeInfo extends VideoInfo {
     }
 
     private StreamInfo vq;
+    private URI playerURI;
 
-    public YoutubeInfo(URL web) {
+    public YouTubeInfo(URL web) {
         super(web);
     }
 
@@ -111,6 +113,14 @@ public class YoutubeInfo extends VideoInfo {
 
     public void setStreamInfo(StreamInfo vq) {
         this.vq = vq;
+    }
+
+    public URI getPlayerURI() {
+        return playerURI;
+    }
+
+    public void setPlayerURI(URI playerURI) {
+        this.playerURI = playerURI;
     }
 
 }

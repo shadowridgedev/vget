@@ -5,8 +5,8 @@ import java.util.List;
 
 import com.github.axet.vget.vhs.YouTubeParser;
 import com.github.axet.vget.vhs.YouTubeParser.VideoDownload;
-import com.github.axet.vget.vhs.YoutubeInfo.StreamVideo;
-import com.github.axet.vget.vhs.YoutubeInfo;
+import com.github.axet.vget.vhs.YouTubeInfo.StreamVideo;
+import com.github.axet.vget.vhs.YouTubeInfo;
 
 public class ExtractDownloadLinks {
 
@@ -15,7 +15,7 @@ public class ExtractDownloadLinks {
             // ex: http://www.youtube.com/watch?v=Nj6PFaDmp6c
             String url = args[0];
 
-            YoutubeInfo info = new YoutubeInfo(new URL(url));
+            YouTubeInfo info = new YouTubeInfo(new URL(url));
 
             YouTubeParser parser = new YouTubeParser();
 
