@@ -5,9 +5,8 @@ import java.net.URL;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.commons.lang3.exception.ExceptionUtils;
-
 import com.github.axet.vget.info.VGetParser;
+import com.github.axet.vget.info.VideoFileInfo;
 import com.github.axet.vget.info.VideoInfo;
 import com.github.axet.vget.vhs.VimeoInfo;
 import com.github.axet.vget.vhs.YouTubeInfo;
@@ -27,7 +26,7 @@ public class AppManagedDownload {
                 @Override
                 public void run() {
                     VideoInfo videoinfo = AppManagedDownload.this.videoinfo;
-                    List<DownloadInfo> dinfoList = videoinfo.getInfo();
+                    List<VideoFileInfo> dinfoList = videoinfo.getInfo();
 
                     // notify app or save download state
                     // you can extract information from DownloadInfo info;
@@ -44,11 +43,14 @@ public class AppManagedDownload {
                         } else {
                             System.out.println("downloading unknown quality");
                         }
+                        for (VideoFileInfo d : videoinfo.getInfo()) {
+                            System.out.println(String.format("file:%d - %s", dinfoList.indexOf(d), d.targetFile));
+                        }
                         break;
                     case ERROR:
                         if (dinfoList != null) {
                             for (DownloadInfo dinfo : dinfoList) {
-                                System.out.println("part:" + dinfoList.indexOf(dinfo) + " - " + dinfo.getException()
+                                System.out.println("file:" + dinfoList.indexOf(dinfo) + " - " + dinfo.getException()
                                         + " delay:" + dinfo.getDelay());
                             }
                         } else {
@@ -58,9 +60,7 @@ public class AppManagedDownload {
                     case RETRYING:
                         if (dinfoList != null) {
                             for (DownloadInfo dinfo : dinfoList) {
-                                // if
-                                // (dinfo.getState().equals(DownloadInfo.States.RETRYING))
-                                System.out.println("part:" + dinfoList.indexOf(dinfo) + " - " + dinfo.getState() + " "
+                                System.out.println("file:" + dinfoList.indexOf(dinfo) + " - " + dinfo.getState() + " "
                                         + dinfo.getException() + " delay:" + dinfo.getDelay());
                             }
                         } else {
@@ -80,12 +80,12 @@ public class AppManagedDownload {
                                     // multipart download
                                     for (Part p : pp) {
                                         if (p.getState().equals(States.DOWNLOADING)) {
-                                            parts += String.format("Part#%d(%.2f) ", p.getNumber(),
+                                            parts += String.format("part#%d(%.2f) ", p.getNumber(),
                                                     p.getCount() / (float) p.getLength());
                                         }
                                     }
                                 }
-                                System.out.println(String.format("thread:%d - %s %.2f %s", dinfoList.indexOf(dinfo),
+                                System.out.println(String.format("file:%d - %s %.2f %s", dinfoList.indexOf(dinfo),
                                         videoinfo.getState(), dinfo.getCount() / (float) dinfo.getLength(), parts));
                             }
                         }

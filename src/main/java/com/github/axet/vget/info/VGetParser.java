@@ -14,7 +14,7 @@ public abstract class VGetParser {
 
     public void info(VideoInfo info, AtomicBoolean stop, Runnable notify) {
         try {
-            List<DownloadInfo> dinfo = extract(info, stop, notify);
+            List<VideoFileInfo> dinfo = extract(info, stop, notify);
 
             info.setInfo(dinfo);
 
@@ -33,6 +33,6 @@ public abstract class VGetParser {
         }
     }
 
-    public abstract List<DownloadInfo> extract(final VideoInfo vinfo, final AtomicBoolean stop, final Runnable notify);
+    public abstract List<VideoFileInfo> extract(final VideoInfo vinfo, final AtomicBoolean stop, final Runnable notify);
 
 }

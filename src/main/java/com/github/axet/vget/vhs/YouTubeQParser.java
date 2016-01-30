@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.github.axet.vget.info.VideoFileInfo;
 import com.github.axet.vget.info.VideoInfo;
 import com.github.axet.vget.vhs.YouTubeInfo.StreamCombined;
 import com.github.axet.vget.vhs.YouTubeInfo.YoutubeQuality;
@@ -20,7 +21,7 @@ public class YouTubeQParser extends YouTubeParser {
         this.q = q;
     }
 
-    public List<DownloadInfo> extract(final VideoInfo vinfo, final AtomicBoolean stop, final Runnable notify) {
+    public List<VideoFileInfo> extract(final VideoInfo vinfo, final AtomicBoolean stop, final Runnable notify) {
         List<VideoDownload> sNextVideoURL = extractLinks((YouTubeInfo) vinfo, stop, notify);
 
         if (sNextVideoURL.size() == 0) {
@@ -47,7 +48,7 @@ public class YouTubeQParser extends YouTubeParser {
             if (found) {
                 YouTubeInfo yinfo = (YouTubeInfo) vinfo;
                 yinfo.setStreamInfo(vq);
-                DownloadInfo info = new DownloadInfo(v.url);
+                VideoFileInfo info = new VideoFileInfo(v.url);
                 vinfo.setInfo(Arrays.asList(info));
                 vinfo.setSource(v.url);
                 return vinfo.getInfo();

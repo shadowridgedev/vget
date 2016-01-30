@@ -16,7 +16,7 @@ public class VideoInfo {
     private URL web;
 
     private URL source;
-    private List<DownloadInfo> info = new ArrayList<DownloadInfo>();
+    private List<VideoFileInfo> info = new ArrayList<VideoFileInfo>();
     private String title;
     private URL icon;
 
@@ -66,11 +66,11 @@ public class VideoInfo {
         this.title = title;
     }
 
-    synchronized public List<DownloadInfo> getInfo() {
+    synchronized public List<VideoFileInfo> getInfo() {
         return info;
     }
 
-    synchronized public void setInfo(List<DownloadInfo> info) {
+    synchronized public void setInfo(List<VideoFileInfo> info) {
         this.info = info;
     }
 

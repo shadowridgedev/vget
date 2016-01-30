@@ -15,12 +15,12 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringEscapeUtils;
 
 import com.github.axet.vget.info.VGetParser;
+import com.github.axet.vget.info.VideoFileInfo;
 import com.github.axet.vget.info.VideoInfo;
 import com.github.axet.vget.info.VideoInfo.States;
 import com.github.axet.vget.vhs.VimeoInfo.VimeoQuality;
 import com.github.axet.wget.WGet;
 import com.github.axet.wget.WGet.HtmlLoader;
-import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.ex.DownloadError;
 import com.google.gson.Gson;
 
@@ -204,7 +204,7 @@ public class VimeoParser extends VGetParser {
     }
 
     @Override
-    public List<DownloadInfo> extract(VideoInfo vinfo, AtomicBoolean stop, Runnable notify) {
+    public List<VideoFileInfo> extract(VideoInfo vinfo, AtomicBoolean stop, Runnable notify) {
         List<VideoDownload> sNextVideoURL = extractLinks(vinfo, stop, notify);
 
         Collections.sort(sNextVideoURL, new VideoContentFirst());
@@ -214,7 +214,7 @@ public class VimeoParser extends VGetParser {
 
             VimeoInfo yinfo = (VimeoInfo) vinfo;
             yinfo.setVideoQuality(v.vq);
-            DownloadInfo info = new DownloadInfo(v.url);
+            VideoFileInfo info = new VideoFileInfo(v.url);
             vinfo.setInfo(Arrays.asList(info));
             vinfo.setSource(v.url);
             return vinfo.getInfo();
