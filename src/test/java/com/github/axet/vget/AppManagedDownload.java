@@ -48,23 +48,23 @@ public class AppManagedDownload {
                         }
                         break;
                     case ERROR:
+                        System.out.println(videoinfo.getState() + " " + videoinfo.getDelay());
+                        
                         if (dinfoList != null) {
                             for (DownloadInfo dinfo : dinfoList) {
                                 System.out.println("file:" + dinfoList.indexOf(dinfo) + " - " + dinfo.getException()
                                         + " delay:" + dinfo.getDelay());
                             }
-                        } else {
-                            System.out.println(videoinfo.getState() + " " + videoinfo.getDelay());
                         }
                         break;
                     case RETRYING:
+                        System.out.println(videoinfo.getState() + " " + videoinfo.getDelay());
+
                         if (dinfoList != null) {
                             for (DownloadInfo dinfo : dinfoList) {
                                 System.out.println("file:" + dinfoList.indexOf(dinfo) + " - " + dinfo.getState() + " "
                                         + dinfo.getException() + " delay:" + dinfo.getDelay());
                             }
-                        } else {
-                            System.out.println(videoinfo.getState() + " " + videoinfo.getDelay());
                         }
                         break;
                     case DOWNLOADING:

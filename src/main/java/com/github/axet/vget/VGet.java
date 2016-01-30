@@ -222,7 +222,7 @@ public class VGet {
         return "." + ct.replaceAll("x-", "").toLowerCase();
     }
 
-    void target(VideoFileInfo dinfo) {
+    void targetFile(VideoFileInfo dinfo) {
         if (targetForce != null) {
             dinfo.targetFile = targetForce;
 
@@ -276,7 +276,7 @@ public class VGet {
             DownloadIOCodeError c = (DownloadIOCodeError) e;
             switch (c.getCode()) {
             case HttpURLConnection.HTTP_FORBIDDEN:
-            case 416:
+            case 416: // 416 Requested Range Not Satisfiable
                 return true;
             default:
                 return false;
@@ -399,7 +399,7 @@ public class VGet {
     }
 
     void mergeExt(VideoFileInfo info) {
-        if (info == null)
+        if (info.targetFile == null)
             return;
 
         String ext = getExt(info);
@@ -423,7 +423,7 @@ public class VGet {
                     final List<VideoFileInfo> dinfoList = info.getInfo();
 
                     // all working threads have its own stop. separated from
-                    // vget.stop it is nessesery because we have to be able to
+                    // vget.stop it is necessary because we have to be able to
                     // cancel downloading for a single DownloadInfo without
                     // stopping whole download.
                     final AtomicBoolean stopl = new AtomicBoolean(false);
@@ -456,11 +456,11 @@ public class VGet {
                             }
                         }
 
-                        target(dinfo);
+                        targetFile(dinfo);
 
                         mergeExt(dinfo);
 
-                        if (dinfo.targetFile == null && targetForce == null && targetDir == null) {
+                        if (dinfo.targetFile == null) {
                             throw new RuntimeException("bad target");
                         }
 

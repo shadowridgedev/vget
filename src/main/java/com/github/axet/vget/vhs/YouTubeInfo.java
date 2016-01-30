@@ -17,11 +17,11 @@ public class YouTubeInfo extends VideoInfo {
     }
 
     public enum Encoding {
-        H263, H264, VP8, VP9, MP4, MP3, AAC, VORBIS
+        H263, H264, VP8, VP9, MP4, MP3, AAC, VORBIS, OPUS
     }
 
     public enum AudioQuality {
-        k256, k192, k128, k96, k64, k48, k36, k24
+        k256, k192, k160, k128, k96, k70, k64, k50, k48, k36, k24
     }
 
     public static class StreamInfo {
