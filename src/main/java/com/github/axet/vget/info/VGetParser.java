@@ -24,11 +24,11 @@ public abstract class VGetParser {
             }
         } catch (DownloadInterruptedError e) {
             info.setState(States.STOP, e);
-
+            notify.run();
             throw e;
         } catch (RuntimeException e) {
             info.setState(States.ERROR, e);
-
+            notify.run();
             throw e;
         }
     }

@@ -5,6 +5,8 @@ import java.net.URL;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
+
 import com.github.axet.vget.info.VGetParser;
 import com.github.axet.vget.info.VideoInfo;
 import com.github.axet.vget.vhs.VimeoInfo;
@@ -43,13 +45,23 @@ public class AppManagedDownload {
                             System.out.println("downloading unknown quality");
                         }
                         break;
+                    case ERROR:
+                        if (dinfoList != null) {
+                            for (DownloadInfo dinfo : dinfoList) {
+                                System.out.println("part:" + dinfoList.indexOf(dinfo) + " - " + dinfo.getException()
+                                        + " delay:" + dinfo.getDelay());
+                            }
+                        } else {
+                            System.out.println(videoinfo.getState() + " " + videoinfo.getDelay());
+                        }
+                        break;
                     case RETRYING:
                         if (dinfoList != null) {
                             for (DownloadInfo dinfo : dinfoList) {
                                 // if
                                 // (dinfo.getState().equals(DownloadInfo.States.RETRYING))
-                                System.out.println(
-                                        dinfoList.indexOf(dinfo) + " - " + dinfo.getState() + " " + dinfo.getDelay());
+                                System.out.println("part:" + dinfoList.indexOf(dinfo) + " - " + dinfo.getState() + " "
+                                        + dinfo.getException() + " delay:" + dinfo.getDelay());
                             }
                         } else {
                             System.out.println(videoinfo.getState() + " " + videoinfo.getDelay());
@@ -73,7 +85,7 @@ public class AppManagedDownload {
                                         }
                                     }
                                 }
-                                System.out.println(String.format("%d - %s %.2f %s", dinfoList.indexOf(dinfo),
+                                System.out.println(String.format("thread:%d - %s %.2f %s", dinfoList.indexOf(dinfo),
                                         videoinfo.getState(), dinfo.getCount() / (float) dinfo.getLength(), parts));
                             }
                         }
