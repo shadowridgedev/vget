@@ -13,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.github.axet.threads.LimitThreadPool;
 import com.github.axet.vget.info.VGetParser;
+import com.github.axet.vget.info.VideoFileInfo;
 import com.github.axet.vget.info.VideoInfo;
 import com.github.axet.vget.info.VideoInfo.States;
 import com.github.axet.vget.vhs.VimeoParser;
@@ -141,11 +142,11 @@ public class VGet {
         return false;
     }
 
-    DownloadInfo getNewInfo(List<DownloadInfo> infoList, DownloadInfo infoOld) {
+    VideoFileInfo getNewInfo(List<VideoFileInfo> infoList, VideoFileInfo infoOld) {
         if (infoOld == null)
             return null;
 
-        for (DownloadInfo d : infoList) {
+        for (VideoFileInfo d : infoList) {
             if (infoOld.resume(d))
                 return d;
         }
@@ -178,15 +179,15 @@ public class VGet {
                 // proxy server is down we have to try to extract new info
                 // and try to resume download
 
-                List<DownloadInfo> infoOldList = info.getInfo();
+                List<VideoFileInfo> infoOldList = info.getInfo();
 
                 user = parser(user, info.getWeb());
                 user.info(info, stop, notify);
 
                 // info replaced by user.info() call
-                List<DownloadInfo> infoNewList = info.getInfo();
+                List<VideoFileInfo> infoNewList = info.getInfo();
 
-                for (DownloadInfo infoOld : infoOldList) {
+                for (VideoFileInfo infoOld : infoOldList) {
                     DownloadInfo infoNew = getNewInfo(infoNewList, infoOld);
 
                     if (infoOld != null && infoNew != null && infoOld.resume(infoNew)) {
@@ -420,7 +421,7 @@ public class VGet {
 
             while (!done(stop)) {
                 try {
-                    final List<DownloadInfo> dinfoList = info.getInfo();
+                    final List<VideoFileInfo> dinfoList = info.getInfo();
 
                     // all working threads have its own stop. separated from
                     // vget.stop it is nessesery because we have to be able to
@@ -445,7 +446,7 @@ public class VGet {
 
                     LimitThreadPool l = new LimitThreadPool(4);
 
-                    for (final DownloadInfo dinfo : dinfoList) {
+                    for (final VideoFileInfo dinfo : dinfoList) {
                         {
                             boolean v = dinfo.getContentType().contains("video/");
                             boolean a = dinfo.getContentType().contains("audio/");
@@ -460,20 +461,20 @@ public class VGet {
 
                         Direct directV;
 
-                        File targetFile = mergeExt(dinfo);
+                        dinfo.targetFile = mergeExt(dinfo);
 
                         if (dinfo.multipart()) {
                             // multi part? overwrite.
-                            directV = new DirectMultipart(dinfo, targetFile);
+                            directV = new DirectMultipart(dinfo, dinfo.targetFile);
                         } else if (dinfo.getRange()) {
                             // range download? try to resume download from last
                             // position
-                            if (targetFile.exists() && targetFile.length() != dinfo.getCount())
-                                targetFile = null;
-                            directV = new DirectRange(dinfo, targetFile);
+                            if (dinfo.targetFile.exists() && dinfo.targetFile.length() != dinfo.getCount())
+                                dinfo.targetFile = null;
+                            directV = new DirectRange(dinfo, dinfo.targetFile);
                         } else {
                             // single download? overwrite file
-                            directV = new DirectSingle(dinfo, targetFile);
+                            directV = new DirectSingle(dinfo, dinfo.targetFile);
                         }
                         final Direct direct = directV;
 

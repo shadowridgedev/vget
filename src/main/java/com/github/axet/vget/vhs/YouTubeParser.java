@@ -34,6 +34,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 
 import com.github.axet.vget.info.VGetParser;
+import com.github.axet.vget.info.VideoFileInfo;
 import com.github.axet.vget.info.VideoInfo;
 import com.github.axet.vget.info.VideoInfo.States;
 import com.github.axet.vget.vhs.YouTubeInfo.AudioQuality;
@@ -835,7 +836,7 @@ public class YouTubeParser extends VGetParser {
     }
 
     @Override
-    public List<DownloadInfo> extract(VideoInfo vinfo, AtomicBoolean stop, Runnable notify) {
+    public List<VideoFileInfo> extract(VideoInfo vinfo, AtomicBoolean stop, Runnable notify) {
         List<VideoDownload> videos = extractLinks((YouTubeInfo) vinfo, stop, notify);
 
         if (videos.size() == 0) {
@@ -867,14 +868,14 @@ public class YouTubeParser extends VGetParser {
             YouTubeInfo yinfo = (YouTubeInfo) vinfo;
             yinfo.setStreamInfo(v.stream);
 
-            DownloadInfo info = new DownloadInfo(v.url);
+            VideoFileInfo info = new VideoFileInfo(v.url);
 
             if (v.stream instanceof StreamCombined) {
                 vinfo.setInfo(Arrays.asList(info));
             }
 
             if (v.stream instanceof StreamVideo) {
-                DownloadInfo info2 = new DownloadInfo(audios.get(0).url);
+                VideoFileInfo info2 = new VideoFileInfo(audios.get(0).url);
                 vinfo.setInfo(Arrays.asList(info, info2));
             }
 
