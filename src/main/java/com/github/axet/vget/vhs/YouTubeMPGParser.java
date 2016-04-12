@@ -3,27 +3,22 @@ package com.github.axet.vget.vhs;
 import java.net.URL;
 import java.util.List;
 
+import com.github.axet.vget.vhs.YouTubeInfo.Container;
+import com.github.axet.vget.vhs.YouTubeInfo.StreamInfo;
+
 public class YouTubeMPGParser extends YouTubeParser {
 
     public YouTubeMPGParser() {
     }
 
     void filter(List<VideoDownload> sNextVideoURL, String itag, URL url) {
-        Integer i = Integer.parseInt(itag);
+        Integer i = Integer.decode(itag);
+        StreamInfo vd = itagMap.get(i);
 
         // get rid of webm
-        switch (i) {
-        case 102:
-        case 101:
-        case 100:
-        case 46:
-        case 45:
-        case 44:
-        case 43:
+        if (vd.c == Container.WEBM)
             return;
-        }
 
         super.filter(sNextVideoURL, itag, url);
     }
-
 }
