@@ -13,6 +13,7 @@ import com.github.axet.vget.vhs.YouTubeInfo;
 import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.DownloadInfo.Part;
 import com.github.axet.wget.info.DownloadInfo.Part.States;
+import com.github.axet.wget.info.ex.DownloadInterruptedError;
 
 public class AppManagedDownload {
 
@@ -21,7 +22,7 @@ public class AppManagedDownload {
 
     public void run(String url, File path) {
         try {
-            AtomicBoolean stop = new AtomicBoolean(false);
+            final AtomicBoolean stop = new AtomicBoolean(false);
             Runnable notify = new Runnable() {
                 @Override
                 public void run() {
@@ -49,7 +50,7 @@ public class AppManagedDownload {
                         break;
                     case ERROR:
                         System.out.println(videoinfo.getState() + " " + videoinfo.getDelay());
-                        
+
                         if (dinfoList != null) {
                             for (DownloadInfo dinfo : dinfoList) {
                                 System.out.println("file:" + dinfoList.indexOf(dinfo) + " - " + dinfo.getException()
@@ -118,17 +119,22 @@ public class AppManagedDownload {
             videoinfo = user.info(web);
 
             VGet v = new VGet(videoinfo, path);
-
+            
             // [OPTIONAL] call v.extract() only if you d like to get video title
             // or download url link before start download. or just skip it.
             v.extract(user, stop, notify);
 
             System.out.println("Title: " + videoinfo.getTitle());
-            for (DownloadInfo d : videoinfo.getInfo()) {
-                System.out.println("Download URL: " + d.getSource());
+            List<VideoFileInfo> list = videoinfo.getInfo();
+            if (list != null) {
+                for (DownloadInfo d : list) {
+                    System.out.println("Download URL: " + d.getSource());
+                }
             }
 
             v.download(user, stop, notify);
+        } catch (DownloadInterruptedError e) {
+            System.out.println(videoinfo.getState());
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {

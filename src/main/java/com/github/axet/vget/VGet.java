@@ -287,8 +287,7 @@ public class VGet {
     }
 
     /**
-     * @return return status of download information. subclassing for
-     *         VideoInfo.empty();
+     * @return return status of download information. subclassing for VideoInfo.empty();
      * 
      */
     public boolean empty() {
@@ -318,30 +317,36 @@ public class VGet {
      *            notify executre
      */
     public void extract(VGetParser user, AtomicBoolean stop, Runnable notify) {
-        while (!done(stop)) {
-            try {
-                if (info.empty()) {
-                    info.setState(States.EXTRACTING);
-                    user = parser(user, info.getWeb());
-                    user.info(info, stop, notify);
-                    info.setState(States.EXTRACTING_DONE);
-                    notify.run();
-                }
-                return;
-            } catch (DownloadRetry e) {
-                retry(user, stop, notify, e);
-            } catch (DownloadMultipartError e) {
-                checkFileNotFound(e);
-                checkRetry(e);
-                retry(user, stop, notify, e);
-            } catch (DownloadIOCodeError e) {
-                if (retry(e))
+        try {
+            while (!done(stop)) {
+                try {
+                    if (info.empty()) {
+                        info.setState(States.EXTRACTING);
+                        user = parser(user, info.getWeb());
+                        user.info(info, stop, notify);
+                        info.setState(States.EXTRACTING_DONE);
+                        notify.run();
+                    }
+                    return;
+                } catch (DownloadRetry e) {
                     retry(user, stop, notify, e);
-                else
-                    throw e;
-            } catch (DownloadIOError e) {
-                retry(user, stop, notify, e);
+                } catch (DownloadMultipartError e) {
+                    checkFileNotFound(e);
+                    checkRetry(e);
+                    retry(user, stop, notify, e);
+                } catch (DownloadIOCodeError e) {
+                    if (retry(e))
+                        retry(user, stop, notify, e);
+                    else
+                        throw e;
+                } catch (DownloadIOError e) {
+                    retry(user, stop, notify, e);
+                }
             }
+        } catch (DownloadInterruptedError e) {
+            info.setState(States.STOP);
+            notify.run();
+            throw e;
         }
     }
 
@@ -354,8 +359,7 @@ public class VGet {
     }
 
     /**
-     * check if all parts has the same filenotfound exception. if so throw
-     * DownloadError.FilenotFoundexcepiton
+     * check if all parts has the same filenotfound exception. if so throw DownloadError.FilenotFoundexcepiton
      * 
      * @param e
      *            error occured
@@ -422,35 +426,18 @@ public class VGet {
                 try {
                     final List<VideoFileInfo> dinfoList = info.getInfo();
 
-                    // all working threads have its own stop. separated from
-                    // vget.stop it is necessary because we have to be able to
-                    // cancel downloading for a single DownloadInfo without
-                    // stopping whole download.
-                    final AtomicBoolean stopl = new AtomicBoolean(false);
+                    final LimitThreadPool l = new LimitThreadPool(4);
 
-                    Thread stopr = new Thread("stopr") {
-                        @Override
-                        public void run() {
-                            synchronized (stop) {
-                                try {
-                                    stop.wait();
-                                } catch (InterruptedException e) {
-                                    return;
-                                }
-                                stopl.set(stop.get());
-                            }
-                        }
-                    };
-                    stopr.start();
-
-                    LimitThreadPool l = new LimitThreadPool(4);
+                    final Thread main = Thread.currentThread();
 
                     for (final VideoFileInfo dinfo : dinfoList) {
                         {
-                            boolean v = dinfo.getContentType().contains("video/");
-                            boolean a = dinfo.getContentType().contains("audio/");
-                            if (dinfo.getContentType() == null || (!v && !a)) {
-                                stopl.set(true);
+                            String c = dinfo.getContentType();
+                            if (c == null)
+                                c = "";
+                            boolean v = c.contains("video/");
+                            boolean a = c.contains("audio/");
+                            if (!v && !a) {
                                 throw new DownloadRetry(
                                         "unable to download video, bad content " + dinfo.getContentType());
                             }
@@ -506,30 +493,48 @@ public class VGet {
                                 @Override
                                 public void run() {
                                     try {
-                                        direct.download(stopl, r);
+                                        direct.download(stop, r);
                                     } catch (DownloadInterruptedError e) {
-                                        synchronized (stopl) {
-                                            stopl.set(true);
-                                            stopl.notifyAll();
-                                        }
+                                        // we need to handle this task error to l.waitUntilTermination()
+                                        main.interrupt();
                                     }
                                 }
                             });
                         } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
+                            l.interrupt();
+                            // wait for childs to exit
+                            boolean clear = true;
+                            while (clear) {
+                                try {
+                                    l.join();
+                                    clear = false;
+                                } catch (InterruptedException ee) {
+                                    // we got interrupted twice from main.interrupt()
+                                }
+                            }
+                            throw new DownloadInterruptedError(e);
                         }
                     }
 
                     try {
                         l.waitUntilTermination();
-                        stopr.interrupt();
                     } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
+                        l.interrupt();
+                        // wait for childs to exit
+                        boolean clear = true;
+                        while (clear) {
+                            try {
+                                l.join();
+                                clear = false;
+                            } catch (InterruptedException ee) {
+                                // we got interrupted twice from main.interrupt()
+                            }
+                        }
+                        throw new DownloadInterruptedError(e);
                     }
 
                     info.setState(States.DONE);
                     notify.run();
-
                     // break while()
                     return;
                 } catch (DownloadRetry e) {
@@ -550,12 +555,10 @@ public class VGet {
         } catch (DownloadInterruptedError e) {
             info.setState(VideoInfo.States.STOP, e);
             notify.run();
-
             throw e;
         } catch (RuntimeException e) {
             info.setState(VideoInfo.States.ERROR, e);
             notify.run();
-
             throw e;
         }
     }
