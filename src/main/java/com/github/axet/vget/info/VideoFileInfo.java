@@ -7,7 +7,6 @@ import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.ProxyInfo;
 
 public class VideoFileInfo extends DownloadInfo {
-
     public File targetFile;
 
     public VideoFileInfo(URL source) {

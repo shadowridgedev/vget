@@ -2,7 +2,9 @@ package com.github.axet.vget;
 
 import java.io.File;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.github.axet.vget.info.VGetParser;
@@ -10,6 +12,7 @@ import com.github.axet.vget.info.VideoFileInfo;
 import com.github.axet.vget.info.VideoInfo;
 import com.github.axet.vget.vhs.VimeoInfo;
 import com.github.axet.vget.vhs.YouTubeInfo;
+import com.github.axet.wget.SpeedInfo;
 import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.DownloadInfo.Part;
 import com.github.axet.wget.info.DownloadInfo.Part.States;
@@ -19,6 +22,21 @@ public class AppManagedDownload {
 
     VideoInfo videoinfo;
     long last;
+
+    Map<VideoFileInfo, SpeedInfo> map = new HashMap<VideoFileInfo, SpeedInfo>();
+
+    public static String formatSpeed(long s) {
+        if (s > 0.1 * 1024 * 1024 * 1024) {
+            float f = s / 1024f / 1024f / 1024f;
+            return String.format("%.1f GB/s", f);
+        } else if (s > 0.1 * 1024 * 1024) {
+            float f = s / 1024f / 1024f;
+            return String.format("%.1f MB/s", f);
+        } else {
+            float f = s / 1024f;
+            return String.format("%.1f kb/s", f);
+        }
+    }
 
     public void run(String url, File path) {
         try {
@@ -45,7 +63,15 @@ public class AppManagedDownload {
                             System.out.println("downloading unknown quality");
                         }
                         for (VideoFileInfo d : videoinfo.getInfo()) {
-                            System.out.println(String.format("file:%d - %s", dinfoList.indexOf(d), d.targetFile));
+                            SpeedInfo speedInfo = map.get(d);
+                            if (speedInfo == null) {
+                                speedInfo = new SpeedInfo();
+                                speedInfo.start(d.getCount());
+                                map.put(d, speedInfo);
+                            }
+                            speedInfo.end(d.getCount());
+                            System.out.println(String.format("file:%d - %s (%s)", dinfoList.indexOf(d), d.targetFile,
+                                    formatSpeed(speedInfo.getAverageSpeed())));
                         }
                         break;
                     case ERROR:
@@ -75,7 +101,15 @@ public class AppManagedDownload {
 
                             String parts = "";
 
-                            for (DownloadInfo dinfo : dinfoList) {
+                            for (VideoFileInfo dinfo : dinfoList) {
+                                SpeedInfo speedInfo = map.get(dinfo);
+                                if (speedInfo == null) {
+                                    speedInfo = new SpeedInfo();
+                                    speedInfo.start(dinfo.getCount());
+                                    map.put(dinfo, speedInfo);
+                                }
+                                speedInfo.step(dinfo.getCount());
+
                                 List<Part> pp = dinfo.getParts();
                                 if (pp != null) {
                                     // multipart download
@@ -86,8 +120,11 @@ public class AppManagedDownload {
                                         }
                                     }
                                 }
-                                System.out.println(String.format("file:%d - %s %.2f %s", dinfoList.indexOf(dinfo),
-                                        videoinfo.getState(), dinfo.getCount() / (float) dinfo.getLength(), parts));
+                                System.out.println(
+                                        String.format("file:%d - %s %.2f %s (%s / %s)", dinfoList.indexOf(dinfo),
+                                                videoinfo.getState(), dinfo.getCount() / (float) dinfo.getLength(),
+                                                parts, formatSpeed(speedInfo.getCurrentSpeed()),
+                                                formatSpeed(speedInfo.getAverageSpeed())));
                             }
                         }
                         break;
@@ -119,7 +156,7 @@ public class AppManagedDownload {
             videoinfo = user.info(web);
 
             VGet v = new VGet(videoinfo, path);
-            
+
             // [OPTIONAL] call v.extract() only if you d like to get video title
             // or download url link before start download. or just skip it.
             v.extract(user, stop, notify);
