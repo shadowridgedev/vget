@@ -100,6 +100,15 @@ public class AppManagedDownload {
                     // you can extract information from DownloadInfo info;
                     switch (videoinfo.getState()) {
                     case EXTRACTING:
+                        for (VideoFileInfo dinfo : videoinfo.getInfo()) {
+                            SpeedInfo speedInfo = map.get(dinfo);
+                            if (speedInfo == null) {
+                                speedInfo = new SpeedInfo();
+                                speedInfo.start(dinfo.getCount());
+                                map.put(dinfo, speedInfo);
+                            }
+                        }
+                        // no break
                     case EXTRACTING_DONE:
                     case DONE:
                         if (videoinfo instanceof YouTubeInfo) {
@@ -113,11 +122,6 @@ public class AppManagedDownload {
                         }
                         for (VideoFileInfo d : videoinfo.getInfo()) {
                             SpeedInfo speedInfo = map.get(d);
-                            if (speedInfo == null) {
-                                speedInfo = new SpeedInfo();
-                                speedInfo.start(d.getCount());
-                                map.put(d, speedInfo);
-                            }
                             speedInfo.end(d.getCount());
                             System.out.println(String.format("file:%d - %s (%s)", dinfoList.indexOf(d), d.targetFile,
                                     formatSpeed(speedInfo.getAverageSpeed())));
@@ -152,11 +156,6 @@ public class AppManagedDownload {
 
                             for (VideoFileInfo dinfo : dinfoList) {
                                 SpeedInfo speedInfo = map.get(dinfo);
-                                if (speedInfo == null) {
-                                    speedInfo = new SpeedInfo();
-                                    speedInfo.start(dinfo.getCount());
-                                    map.put(dinfo, speedInfo);
-                                }
                                 speedInfo.step(dinfo.getCount());
 
                                 List<Part> pp = dinfo.getParts();
