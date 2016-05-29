@@ -252,7 +252,8 @@ public class VGet {
             return true;
         for (VideoFileInfo dinfo : info.getInfo()) {
             if (dinfo.targetFile != null && dinfo.targetFile.equals(f)) {
-                conflict.set(true);
+                if (conflict != null)
+                    conflict.set(true);
                 return true;
             }
         }
@@ -261,7 +262,7 @@ public class VGet {
 
     public void targetFileForce(VideoFileInfo dinfo) {
         if (targetForce != null) {
-            if (exists(targetForce, new AtomicBoolean())) {
+            if (exists(targetForce, null)) {
                 // VGet v = new VGet(videoinfo, path);
                 // v.extract(user, stop, notify);
                 // List<VideoFileInfo> list = videoinfo.getInfo();
