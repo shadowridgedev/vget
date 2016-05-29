@@ -212,6 +212,9 @@ public class AppManagedDownload {
             List<VideoFileInfo> list = videoinfo.getInfo();
             if (list != null) {
                 for (VideoFileInfo d : list) {
+                    // [OPTIONAL] setTarget file for each download source video/audio
+                    // use d.getContentType() to determine which or use
+                    // v.targetFile(dinfo, ext, conflict) to set name dynamically
                     // d.targetFile = new File("/Downloads/CustomName.mp3");
                     System.out.println("Download URL: " + d.getSource());
                 }
