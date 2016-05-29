@@ -168,8 +168,7 @@ public class YouTubeParser extends VGetParser {
         }
 
         /**
-         * Gets the corresponding html5player.js in order to decode youtube
-         * video signature
+         * Gets the corresponding html5player.js in order to decode youtube video signature
          * 
          * @return player.js file
          */
@@ -205,10 +204,9 @@ public class YouTubeParser extends VGetParser {
         }
 
         /**
-         * Determines the main decode function name. Unfortunately the name of
-         * the decode-funtion might change from version to version, but the part
-         * of the code that makes use of this function usually doesn't change.
-         * So let's give it a try.
+         * Determines the main decode function name. Unfortunately the name of the decode-funtion might change from
+         * version to version, but the part of the code that makes use of this function usually doesn't change. So let's
+         * give it a try.
          * 
          * @param playerJS
          *            corresponding javascript html5 player file
@@ -224,16 +222,14 @@ public class YouTubeParser extends VGetParser {
         }
 
         /**
-         * Extracts the relevant decode functions of the html5player script.
-         * Besides the main decode function we need to extract some utility
-         * functions the decode-function is using.
+         * Extracts the relevant decode functions of the html5player script. Besides the main decode function we need to
+         * extract some utility functions the decode-function is using.
          * 
          * @param playerJS
          *            the html5player script
          * @param functionName
          *            the main decode function name
-         * @return returns only those functions which are relevant for the
-         *         signature decoding
+         * @return returns only those functions which are relevant for the signature decoding
          */
         private String extractDecodeFunctions(String playerJS, String functionName) {
             StringBuilder decodeScript = new StringBuilder();
@@ -272,8 +268,7 @@ public class YouTubeParser extends VGetParser {
         }
 
         /**
-         * Decodes the youtube video signature using the decode functions
-         * provided in the html5player script.
+         * Decodes the youtube video signature using the decode functions provided in the html5player script.
          */
         String decrypt(AtomicBoolean stop, Runnable notify) {
             ScriptEngineManager manager = new ScriptEngineManager();
@@ -880,8 +875,13 @@ public class YouTubeParser extends VGetParser {
             }
 
             if (v.stream instanceof StreamVideo) {
-                VideoFileInfo info2 = new VideoFileInfo(audios.get(0).url);
-                vinfo.setInfo(Arrays.asList(info, info2));
+                if (audios.size() > 0) {
+                    VideoFileInfo info2 = new VideoFileInfo(audios.get(0).url);
+                    vinfo.setInfo(Arrays.asList(info, info2));
+                } else {
+                    // no audio stream?
+                    vinfo.setInfo(Arrays.asList(info));
+                }
             }
 
             vinfo.setSource(v.url);
