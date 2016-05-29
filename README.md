@@ -73,7 +73,7 @@ public class AppManagedDownload {
     long last;
 
     Map<VideoFileInfo, SpeedInfo> map = new HashMap<VideoFileInfo, SpeedInfo>();
-    
+
     public SpeedInfo getSpeedInfo(VideoFileInfo dinfo) {
         SpeedInfo speedInfo = map.get(dinfo);
         if (speedInfo == null) {
@@ -211,7 +211,8 @@ public class AppManagedDownload {
             System.out.println("Title: " + videoinfo.getTitle());
             List<VideoFileInfo> list = videoinfo.getInfo();
             if (list != null) {
-                for (DownloadInfo d : list) {
+                for (VideoFileInfo d : list) {
+                    // d.targetFile = new File("/Downloads/CustomName.mp3");
                     System.out.println("Download URL: " + d.getSource());
                 }
             }
