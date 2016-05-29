@@ -162,7 +162,7 @@ public class VGet {
                 notify.run();
 
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(RetryWrap.RETRY_SLEEP);
                 } catch (InterruptedException ee) {
                     throw new DownloadInterruptedError(ee);
                 }
@@ -178,23 +178,24 @@ public class VGet {
                 user = parser(user, info.getWeb());
                 user.info(info, stop, notify);
 
-                // info replaced by user.info() call
-                List<VideoFileInfo> infoNewList = info.getInfo();
+                if (infoOldList != null) {
+                    // info replaced by user.info() call
+                    List<VideoFileInfo> infoNewList = info.getInfo();
 
-                for (VideoFileInfo infoOld : infoOldList) {
-                    DownloadInfo infoNew = getNewInfo(infoNewList, infoOld);
+                    for (VideoFileInfo infoOld : infoOldList) {
+                        DownloadInfo infoNew = getNewInfo(infoNewList, infoOld);
 
-                    if (infoOld != null && infoNew != null && infoOld.resume(infoNew)) {
-                        infoNew.copy(infoOld);
-                    } else {
-                        mergeExt(infoOld);
-                        if (infoOld.targetFile != null) {
-                            FileUtils.deleteQuietly(infoOld.targetFile);
-                            infoOld.targetFile = null;
+                        if (infoOld != null && infoNew != null && infoOld.resume(infoNew)) {
+                            infoNew.copy(infoOld);
+                        } else {
+                            if (infoOld.targetFile != null) {
+                                FileUtils.deleteQuietly(infoOld.targetFile);
+                                infoOld.targetFile = null;
+                            }
                         }
-                    }
 
-                    retracted = true;
+                        retracted = true;
+                    }
                 }
             } catch (DownloadIOCodeError ee) {
                 if (retry(ee)) {
@@ -210,22 +211,45 @@ public class VGet {
         }
     }
 
+    // return ".ext" ex: ".mp3" ".webm"
     String getExt(DownloadInfo dinfo) {
         String ct = dinfo.getContentType();
         if (ct == null)
             throw new DownloadRetry("null content type");
 
+        // for single file download keep only extension
         ct = ct.replaceFirst("video/", "");
-
         ct = ct.replaceFirst("audio/", "");
 
         return "." + ct.replaceAll("x-", "").toLowerCase();
     }
 
-    void targetFile(VideoFileInfo dinfo) {
+    // return ".content.ext" ex: ".audio.mp3"
+    String getContentExt(DownloadInfo dinfo) {
+        String ct = dinfo.getContentType();
+        if (ct == null)
+            throw new DownloadRetry("null content type");
+
+        // for multi file download keep content type and extension. some video can have same extensions for booth
+        // audio/video streams
+        ct = ct.replaceFirst("/", ".");
+
+        return "." + ct.replaceAll("x-", "").toLowerCase();
+    }
+
+    boolean exists(File f) {
+        for (VideoFileInfo dinfo : info.getInfo()) {
+            if (dinfo.targetFile != null && dinfo.targetFile.equals(f))
+                return true;
+        }
+        return false;
+    }
+
+    void targetFileForce(VideoFileInfo dinfo) {
         if (targetForce != null) {
             dinfo.targetFile = targetForce;
 
+            // should we force to delete target file instead = null? seems so.
             if (dinfo.multipart()) {
                 if (!DirectMultipart.canResume(dinfo, dinfo.targetFile))
                     dinfo.targetFile = null;
@@ -237,11 +261,16 @@ public class VGet {
                     dinfo.targetFile = null;
             }
         }
+    }
 
+    // return true, video download have the same ".ext" for multiple videos
+    boolean targetFileExt(VideoFileInfo dinfo, String ext) {
         if (dinfo.targetFile == null) {
             if (targetDir == null) {
                 throw new RuntimeException("Set download file or directory first");
             }
+
+            boolean conflict = false;
 
             File f;
 
@@ -251,21 +280,31 @@ public class VGet {
 
             sfilename = maxFileNameLength(sfilename);
 
-            String ext = getExt(dinfo);
-
+            boolean c = false;
             do {
+                // add = " (1)"
                 String add = idupcount > 0 ? " (".concat(idupcount.toString()).concat(")") : "";
-
                 f = new File(targetDir, sfilename + add + ext);
                 idupcount += 1;
-            } while (f.exists());
+                c = exists(f);
+                conflict |= c;
+            } while (f.exists() || c);
 
             dinfo.targetFile = f;
 
-            // if we dont have resume file (targetForce==null) then we shall
+            // if we don't have resume file (targetForce==null) then we shall
             // start over.
             dinfo.reset();
+
+            return conflict;
         }
+        return false;
+    }
+
+    void targetFile(VideoFileInfo dinfo) {
+        targetFileForce(dinfo);
+
+        targetFileExt(dinfo, getExt(dinfo));
     }
 
     boolean retry(Throwable e) {
@@ -402,20 +441,6 @@ public class VGet {
         download(null, stop, notify);
     }
 
-    void mergeExt(VideoFileInfo info) {
-        if (info.targetFile == null)
-            return;
-
-        String ext = getExt(info);
-
-        String f = info.targetFile.getAbsolutePath();
-        if (f.toLowerCase().endsWith(ext.toLowerCase())) {
-            info.targetFile = new File(f);
-        }
-        f = FilenameUtils.removeExtension(f);
-        info.targetFile = new File(f + ext);
-    }
-
     public void download(VGetParser user, final AtomicBoolean stop, final Runnable notify) {
         try {
             if (empty()) {
@@ -430,6 +455,7 @@ public class VGet {
 
                     final Thread main = Thread.currentThread();
 
+                    // safety checks. should it be 'vhs' dependent? does other services return other than "video/audio"?
                     for (final VideoFileInfo dinfo : dinfoList) {
                         {
                             String c = dinfo.getContentType();
@@ -442,11 +468,30 @@ public class VGet {
                                         "unable to download video, bad content " + dinfo.getContentType());
                             }
                         }
+                    }
 
-                        targetFile(dinfo);
+                    // new targetFile() call
+                    {
+                        boolean conflict = false;
+                        // 1) ".ext"
+                        for (final VideoFileInfo dinfo : dinfoList) {
+                            dinfo.targetFile = null;
+                            targetFileForce(dinfo);
+                            conflict |= targetFileExt(dinfo, getExt(dinfo));
+                        }
+                        // conflict means we have " (1).ext" download. try add ".content.ext" as extension
+                        // to make file names looks more pretty.
+                        if (conflict) {
+                            // 2) ".content.ext"
+                            for (final VideoFileInfo dinfo : dinfoList) {
+                                dinfo.targetFile = null;
+                                targetFileForce(dinfo);
+                                targetFileExt(dinfo, getContentExt(dinfo));
+                            }
+                        }
+                    }
 
-                        mergeExt(dinfo);
-
+                    for (final VideoFileInfo dinfo : dinfoList) {
                         if (dinfo.targetFile == null) {
                             throw new RuntimeException("bad target");
                         }
