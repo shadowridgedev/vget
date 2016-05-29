@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.github.axet.threads.LimitThreadPool;
@@ -73,8 +72,16 @@ public class VGet {
         this.info = info;
     }
 
+    /**
+     * set target file for single download source. file willbe overdien if exists.
+     * 
+     * will fail if vget extract several sources (for video/audio urls). use VideoFileInfo.targetFile for multiply
+     * sources.
+     * 
+     * @param file
+     */
     public void setTarget(File file) {
-        targetForce = file;
+        this.targetForce = file;
     }
 
     public void setTargetDir(File targetDir) {
@@ -252,7 +259,8 @@ public class VGet {
             return true;
         for (VideoFileInfo dinfo : info.getInfo()) {
             if (dinfo.targetFile != null && dinfo.targetFile.equals(f)) {
-                conflict.set(true);
+                if (conflict != null)
+                    conflict.set(true);
                 return true;
             }
         }
@@ -261,7 +269,7 @@ public class VGet {
 
     public void targetFileForce(VideoFileInfo dinfo) {
         if (targetForce != null) {
-            if (exists(targetForce, new AtomicBoolean())) {
+            if (exists(targetForce, null)) {
                 // VGet v = new VGet(videoinfo, path);
                 // v.extract(user, stop, notify);
                 // List<VideoFileInfo> list = videoinfo.getInfo();
@@ -324,6 +332,16 @@ public class VGet {
         }
     }
 
+    /**
+     * set targetFile for specified VideoFileInfo.
+     * 
+     * @param dinfo
+     *            VideoFileInfo to set targetFile for
+     * @param ext
+     *            File extension. call getExt() or getContentExt()
+     * @param conflict
+     *            True if we have same file extension for multiply files. File name will be renamed to " (1).ext"
+     */
     public void targetFile(VideoFileInfo dinfo, String ext, AtomicBoolean conflict) {
         targetFileForce(dinfo);
         targetFileExt(dinfo, ext, conflict);
