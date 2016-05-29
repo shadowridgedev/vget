@@ -24,7 +24,7 @@ public class AppManagedDownload {
     long last;
 
     Map<VideoFileInfo, SpeedInfo> map = new HashMap<VideoFileInfo, SpeedInfo>();
-    
+
     public SpeedInfo getSpeedInfo(VideoFileInfo dinfo) {
         SpeedInfo speedInfo = map.get(dinfo);
         if (speedInfo == null) {
@@ -154,7 +154,6 @@ public class AppManagedDownload {
             videoinfo = user.info(web);
 
             VGet v = new VGet(videoinfo, path);
-            v.setTarget(new File("/Users/axet/123"));
 
             // [OPTIONAL] call v.extract() only if you d like to get video title
             // or download url link before start download. or just skip it.
@@ -163,7 +162,12 @@ public class AppManagedDownload {
             System.out.println("Title: " + videoinfo.getTitle());
             List<VideoFileInfo> list = videoinfo.getInfo();
             if (list != null) {
-                for (DownloadInfo d : list) {
+                for (VideoFileInfo d : list) {
+                    // [OPTIONAL] setTarget file for each download source video/audio
+                    // use d.getContentType() to determine which or use
+                    // v.targetFile(dinfo, ext, conflict) to set name dynamically or
+                    // d.targetFile = new File("/Downloads/CustomName.mp3");
+                    // to set file name manually.
                     System.out.println("Download URL: " + d.getSource());
                 }
             }
