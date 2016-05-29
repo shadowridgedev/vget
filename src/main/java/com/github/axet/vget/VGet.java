@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -193,10 +194,9 @@ public class VGet {
                                 infoOld.targetFile = null;
                             }
                         }
-
-                        retracted = true;
                     }
                 }
+                retracted = true;
             } catch (DownloadIOCodeError ee) {
                 if (retry(ee)) {
                     info.setState(States.RETRYING, ee);
@@ -237,10 +237,14 @@ public class VGet {
         return "." + ct.replaceAll("x-", "").toLowerCase();
     }
 
-    boolean exists(File f) {
+    boolean exists(File f, AtomicBoolean conflict) {
+        if (f.exists())
+            return true;
         for (VideoFileInfo dinfo : info.getInfo()) {
-            if (dinfo.targetFile != null && dinfo.targetFile.equals(f))
+            if (dinfo.targetFile != null && dinfo.targetFile.equals(f)) {
+                conflict.set(true);
                 return true;
+            }
         }
         return false;
     }
@@ -249,28 +253,31 @@ public class VGet {
         if (targetForce != null) {
             dinfo.targetFile = targetForce;
 
-            // should we force to delete target file instead = null? seems so.
             if (dinfo.multipart()) {
-                if (!DirectMultipart.canResume(dinfo, dinfo.targetFile))
-                    dinfo.targetFile = null;
+                if (!DirectMultipart.canResume(dinfo, dinfo.targetFile)) {
+                    FileUtils.deleteQuietly(dinfo.targetFile);
+                    dinfo.reset();
+                }
             } else if (dinfo.getRange()) {
-                if (!DirectRange.canResume(dinfo, dinfo.targetFile))
-                    dinfo.targetFile = null;
+                if (!DirectRange.canResume(dinfo, dinfo.targetFile)) {
+                    FileUtils.deleteQuietly(dinfo.targetFile);
+                    dinfo.reset();
+                }
             } else {
-                if (!DirectSingle.canResume(dinfo, dinfo.targetFile))
-                    dinfo.targetFile = null;
+                if (!DirectSingle.canResume(dinfo, dinfo.targetFile)) {
+                    FileUtils.deleteQuietly(dinfo.targetFile);
+                    dinfo.reset();
+                }
             }
         }
     }
 
     // return true, video download have the same ".ext" for multiple videos
-    boolean targetFileExt(VideoFileInfo dinfo, String ext) {
+    void targetFileExt(VideoFileInfo dinfo, String ext, AtomicBoolean conflict) {
         if (dinfo.targetFile == null) {
             if (targetDir == null) {
                 throw new RuntimeException("Set download file or directory first");
             }
-
-            boolean conflict = false;
 
             File f;
 
@@ -280,31 +287,24 @@ public class VGet {
 
             sfilename = maxFileNameLength(sfilename);
 
-            boolean c = false;
             do {
                 // add = " (1)"
                 String add = idupcount > 0 ? " (".concat(idupcount.toString()).concat(")") : "";
                 f = new File(targetDir, sfilename + add + ext);
                 idupcount += 1;
-                c = exists(f);
-                conflict |= c;
-            } while (f.exists() || c);
+            } while (exists(f, conflict));
 
             dinfo.targetFile = f;
 
             // if we don't have resume file (targetForce==null) then we shall
             // start over.
             dinfo.reset();
-
-            return conflict;
         }
-        return false;
     }
 
-    void targetFile(VideoFileInfo dinfo) {
+    void targetFile(VideoFileInfo dinfo, String ext, AtomicBoolean conflict) {
         targetFileForce(dinfo);
-
-        targetFileExt(dinfo, getExt(dinfo));
+        targetFileExt(dinfo, ext, conflict);
     }
 
     boolean retry(Throwable e) {
@@ -447,6 +447,7 @@ public class VGet {
                 extract(user, stop, notify);
             }
 
+            // retry exception loop
             while (!done(stop)) {
                 try {
                     final List<VideoFileInfo> dinfoList = info.getInfo();
@@ -455,38 +456,45 @@ public class VGet {
 
                     final Thread main = Thread.currentThread();
 
-                    // safety checks. should it be 'vhs' dependent? does other services return other than "video/audio"?
-                    for (final VideoFileInfo dinfo : dinfoList) {
-                        {
-                            String c = dinfo.getContentType();
-                            if (c == null)
-                                c = "";
-                            boolean v = c.contains("video/");
-                            boolean a = c.contains("audio/");
-                            if (!v && !a) {
-                                throw new DownloadRetry(
-                                        "unable to download video, bad content " + dinfo.getContentType());
-                            }
-                        }
-                    }
-
                     // new targetFile() call
                     {
-                        boolean conflict = false;
-                        // 1) ".ext"
+                        // update targetFile only if not been set on previous while(!done()) loops.
+                        List<VideoFileInfo> targetNull = new ArrayList<VideoFileInfo>();
+
+                        // safety checks. should it be 'vhs' dependent? does other services return other than
+                        // "video/audio"?
                         for (final VideoFileInfo dinfo : dinfoList) {
+                            if (dinfo.targetFile == null)
+                                targetNull.add(dinfo);
+                            {
+                                String c = dinfo.getContentType();
+                                if (c == null)
+                                    c = "";
+                                boolean v = c.contains("video/");
+                                boolean a = c.contains("audio/");
+                                if (!v && !a) {
+                                    throw new DownloadRetry(
+                                            "unable to download video, bad content " + dinfo.getContentType());
+                                }
+                            }
+                        }
+
+                        // did we meet two similar extensions for audio/video content? conflict == true if so.
+                        // we can continue but one result file name would be like "SomeTitle (1).mp3"
+                        AtomicBoolean conflict = new AtomicBoolean(false);
+                        // 1) ".ext"
+                        for (final VideoFileInfo dinfo : targetNull) {
                             dinfo.targetFile = null;
-                            targetFileForce(dinfo);
-                            conflict |= targetFileExt(dinfo, getExt(dinfo));
+                            targetFile(dinfo, getExt(dinfo), conflict);
                         }
                         // conflict means we have " (1).ext" download. try add ".content.ext" as extension
                         // to make file names looks more pretty.
-                        if (conflict) {
+                        if (conflict.get()) {
+                            conflict = new AtomicBoolean(false);
                             // 2) ".content.ext"
-                            for (final VideoFileInfo dinfo : dinfoList) {
+                            for (final VideoFileInfo dinfo : targetNull) {
                                 dinfo.targetFile = null;
-                                targetFileForce(dinfo);
-                                targetFileExt(dinfo, getContentExt(dinfo));
+                                targetFile(dinfo, getContentExt(dinfo), conflict);
                             }
                         }
                     }
