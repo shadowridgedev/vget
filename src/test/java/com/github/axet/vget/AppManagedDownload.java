@@ -154,6 +154,7 @@ public class AppManagedDownload {
             videoinfo = user.info(web);
 
             VGet v = new VGet(videoinfo, path);
+            v.setTarget(new File("/Users/axet/123"));
 
             // [OPTIONAL] call v.extract() only if you d like to get video title
             // or download url link before start download. or just skip it.
