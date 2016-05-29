@@ -24,6 +24,16 @@ public class AppManagedDownload {
     long last;
 
     Map<VideoFileInfo, SpeedInfo> map = new HashMap<VideoFileInfo, SpeedInfo>();
+    
+    public SpeedInfo getSpeedInfo(VideoFileInfo dinfo) {
+        SpeedInfo speedInfo = map.get(dinfo);
+        if (speedInfo == null) {
+            speedInfo = new SpeedInfo();
+            speedInfo.start(dinfo.getCount());
+            map.put(dinfo, speedInfo);
+        }
+        return speedInfo;
+    }
 
     public static String formatSpeed(long s) {
         if (s > 0.1 * 1024 * 1024 * 1024) {
@@ -51,15 +61,6 @@ public class AppManagedDownload {
                     // you can extract information from DownloadInfo info;
                     switch (videoinfo.getState()) {
                     case EXTRACTING:
-                        for (VideoFileInfo dinfo : videoinfo.getInfo()) {
-                            SpeedInfo speedInfo = map.get(dinfo);
-                            if (speedInfo == null) {
-                                speedInfo = new SpeedInfo();
-                                speedInfo.start(dinfo.getCount());
-                                map.put(dinfo, speedInfo);
-                            }
-                        }
-                        // no break
                     case EXTRACTING_DONE:
                     case DONE:
                         if (videoinfo instanceof YouTubeInfo) {
@@ -72,7 +73,7 @@ public class AppManagedDownload {
                             System.out.println("downloading unknown quality");
                         }
                         for (VideoFileInfo d : videoinfo.getInfo()) {
-                            SpeedInfo speedInfo = map.get(d);
+                            SpeedInfo speedInfo = getSpeedInfo(d);
                             speedInfo.end(d.getCount());
                             System.out.println(String.format("file:%d - %s (%s)", dinfoList.indexOf(d), d.targetFile,
                                     formatSpeed(speedInfo.getAverageSpeed())));
@@ -106,7 +107,7 @@ public class AppManagedDownload {
                             String parts = "";
 
                             for (VideoFileInfo dinfo : dinfoList) {
-                                SpeedInfo speedInfo = map.get(dinfo);
+                                SpeedInfo speedInfo = getSpeedInfo(dinfo);
                                 speedInfo.step(dinfo.getCount());
 
                                 List<Part> pp = dinfo.getParts();
