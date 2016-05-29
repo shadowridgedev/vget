@@ -168,11 +168,9 @@ public class AppManagedDownload {
                                         }
                                     }
                                 }
-                                System.out.println(
-                                        String.format("file:%d - %s %.2f %s (%s / %s)", dinfoList.indexOf(dinfo),
-                                                videoinfo.getState(), dinfo.getCount() / (float) dinfo.getLength(),
-                                                parts, formatSpeed(speedInfo.getCurrentSpeed()),
-                                                formatSpeed(speedInfo.getAverageSpeed())));
+                                System.out.println(String.format("file:%d - %s %.2f %s (%s)", dinfoList.indexOf(dinfo),
+                                        videoinfo.getState(), dinfo.getCount() / (float) dinfo.getLength(), parts,
+                                        formatSpeed(speedInfo.getCurrentSpeed())));
                             }
                         }
                         break;
@@ -244,6 +242,6 @@ public class AppManagedDownload {
 <dependency>
   <groupId>com.github.axet</groupId>
   <artifactId>vget</artifactId>
-  <version>1.1.29</version>
+  <version>1.1.30</version>
 </dependency>
 ```
