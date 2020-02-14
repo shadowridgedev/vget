@@ -3,10 +3,10 @@ package com.github.axet.vget;
 import java.net.URL;
 import java.util.List;
 
-import com.github.axet.vget.vhs.YouTubeParser;
-import com.github.axet.vget.vhs.YouTubeParser.VideoDownload;
-import com.github.axet.vget.vhs.YouTubeInfo.StreamVideo;
-import com.github.axet.vget.vhs.YouTubeInfo;
+import com.myexperiments.ward.YouTubeInfo;
+import com.myexperiments.ward.YouTubeParser;
+import com.myexperiments.ward.YouTubeInfo.StreamVideo;
+import com.myexperiments.ward.YouTubeParser.VideoDownload;
 
 public class ExtractDownloadLinks {
 

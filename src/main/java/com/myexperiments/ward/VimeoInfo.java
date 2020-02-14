@@ -1,4 +1,4 @@
-package com.github.axet.vget.vhs;
+package com.myexperiments.ward;
 
 import java.net.URL;
 

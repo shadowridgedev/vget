@@ -10,13 +10,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.github.axet.vget.info.VGetParser;
 import com.github.axet.vget.info.VideoFileInfo;
 import com.github.axet.vget.info.VideoInfo;
-import com.github.axet.vget.vhs.VimeoInfo;
-import com.github.axet.vget.vhs.YouTubeInfo;
 import com.github.axet.wget.SpeedInfo;
 import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.DownloadInfo.Part;
 import com.github.axet.wget.info.DownloadInfo.Part.States;
 import com.github.axet.wget.info.ex.DownloadInterruptedError;
+import com.myexperiments.ward.VGet;
+import com.myexperiments.ward.VimeoInfo;
+import com.myexperiments.ward.YouTubeInfo;
 
 public class AppManagedDownload {
 
@@ -168,7 +169,7 @@ public class AppManagedDownload {
 
             // [OPTIONAL] call v.extract() only if you d like to get video title
             // or download url link before start download. or just skip it.
-            v.extract(user, stop, notify);
+//            v.extract(user, stop, notify);
 
             System.out.println("Title: " + videoinfo.getTitle());
             List<VideoFileInfo> list = videoinfo.getInfo();

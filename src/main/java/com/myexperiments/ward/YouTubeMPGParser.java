@@ -1,10 +1,10 @@
-package com.github.axet.vget.vhs;
+package com.myexperiments.ward;
 
 import java.net.URL;
 import java.util.List;
 
-import com.github.axet.vget.vhs.YouTubeInfo.Container;
-import com.github.axet.vget.vhs.YouTubeInfo.StreamInfo;
+import com.myexperiments.ward.YouTubeInfo.Container;
+import com.myexperiments.ward.YouTubeInfo.StreamInfo;
 
 public class YouTubeMPGParser extends YouTubeParser {
 

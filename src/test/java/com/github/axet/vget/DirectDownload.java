@@ -3,6 +3,8 @@ package com.github.axet.vget;
 import java.io.File;
 import java.net.URL;
 
+import com.myexperiments.ward.VGet;
+
 public class DirectDownload {
 
     public static void main(String[] args) {

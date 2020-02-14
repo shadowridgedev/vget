@@ -1,4 +1,4 @@
-package com.github.axet.vget.vhs;
+package com.myexperiments.ward;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -18,11 +18,11 @@ import com.github.axet.vget.info.VGetParser;
 import com.github.axet.vget.info.VideoFileInfo;
 import com.github.axet.vget.info.VideoInfo;
 import com.github.axet.vget.info.VideoInfo.States;
-import com.github.axet.vget.vhs.VimeoInfo.VimeoQuality;
 import com.github.axet.wget.WGet;
 import com.github.axet.wget.WGet.HtmlLoader;
 import com.github.axet.wget.info.ex.DownloadError;
 import com.google.gson.Gson;
+import com.myexperiments.ward.VimeoInfo.VimeoQuality;
 
 public class VimeoParser extends VGetParser {
 

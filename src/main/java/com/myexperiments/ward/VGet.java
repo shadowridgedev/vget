@@ -1,4 +1,4 @@
-package com.github.axet.vget;
+package com.myexperiments.ward;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -16,8 +16,6 @@ import com.github.axet.vget.info.VGetParser;
 import com.github.axet.vget.info.VideoFileInfo;
 import com.github.axet.vget.info.VideoInfo;
 import com.github.axet.vget.info.VideoInfo.States;
-import com.github.axet.vget.vhs.VimeoParser;
-import com.github.axet.vget.vhs.YouTubeParser;
 import com.github.axet.wget.Direct;
 import com.github.axet.wget.DirectMultipart;
 import com.github.axet.wget.DirectRange;
@@ -31,6 +29,7 @@ import com.github.axet.wget.info.ex.DownloadIOError;
 import com.github.axet.wget.info.ex.DownloadInterruptedError;
 import com.github.axet.wget.info.ex.DownloadMultipartError;
 import com.github.axet.wget.info.ex.DownloadRetry;
+import com.github.axet.vget.*;
 
 public class VGet {
     protected VideoInfo info;
