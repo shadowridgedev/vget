@@ -594,9 +594,9 @@ public class YouTubeParser extends VGetParser {
 		String icon = map.get("thumbnail_url");
 		icon = URLDecoder.decode(icon, UTF8);
 		info.setIcon(new URL(icon));
-	
+
 	}
-	
+
 	void extractIcon(VideoInfo info, String html) {
 		try {
 			Pattern title = Pattern.compile("itemprop=\"thumbnailUrl\" href=\"(.*)\"");

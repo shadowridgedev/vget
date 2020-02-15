@@ -7,26 +7,26 @@ import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.ProxyInfo;
 
 public class VideoFileInfo extends DownloadInfo {
-    public File targetFile;
+	public File targetFile;
 
-    public VideoFileInfo(URL source) {
-        super(source);
-    }
+	public VideoFileInfo(URL source) {
+		super(source);
+	}
 
-    public VideoFileInfo(URL source, ProxyInfo p) {
-        super(source, p);
-    }
+	public VideoFileInfo(URL source, ProxyInfo p) {
+		super(source, p);
+	}
 
-    /**
-     * set target file download for current DownloadInfo
-     * 
-     * @param file
-     */
-    public void setTarget(File file) {
-        targetFile = file;
-    }
+	/**
+	 * set target file download for current DownloadInfo
+	 * 
+	 * @param file
+	 */
+	public void setTarget(File file) {
+		targetFile = file;
+	}
 
-    public File getTarget() {
-        return targetFile;
-    }
+	public File getTarget() {
+		return targetFile;
+	}
 }

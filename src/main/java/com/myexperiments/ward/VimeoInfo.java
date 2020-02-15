@@ -6,23 +6,23 @@ import com.github.axet.vget.info.VideoInfo;
 
 public class VimeoInfo extends VideoInfo {
 
-    // keep it in order hi->lo
-    public enum VimeoQuality {
-        pHi, pLow
-    }
+	// keep it in order hi->lo
+	public enum VimeoQuality {
+		pHi, pLow
+	}
 
-    private VimeoQuality vq;
+	private VimeoQuality vq;
 
-    public VimeoInfo(URL web) {
-        super(web);
-    }
+	public VimeoInfo(URL web) {
+		super(web);
+	}
 
-    public VimeoQuality getVideoQuality() {
-        return vq;
-    }
+	public VimeoQuality getVideoQuality() {
+		return vq;
+	}
 
-    public void setVideoQuality(VimeoQuality vq) {
-        this.vq = vq;
-    }
+	public void setVideoQuality(VimeoQuality vq) {
+		this.vq = vq;
+	}
 
 }
